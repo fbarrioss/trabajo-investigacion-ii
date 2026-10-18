@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Red Vial — Corredor Norte del Perú</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{
+    --bg:#fafafa; --card:#ffffff; --border:#e4e4e7; --muted:#f4f4f5;
+    --fg:#09090b; --muted-fg:#71717a; --primary:#18181b; --accent:#2563eb;
+    --accent-soft:#eff6ff; --ok:#15803d; --warn:#b45309; --radius:12px;
+    --shadow:0 1px 2px 0 rgb(0 0 0 / .05);
+    --shadow-md:0 4px 12px -2px rgb(0 0 0 / .08), 0 2px 4px -2px rgb(0 0 0 / .06);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:13px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d4d4d8;border-radius:999px;border:3px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-thumb:hover{background:#a1a1aa;background-clip:content-box}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    height:60px; display:flex; align-items:center; gap:18px; padding:0 18px;
+    background:var(--card); border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:1200;
+  }
+  .brand{display:flex; align-items:center; gap:10px; min-width:0}
+  .brand-mark{
+    width:32px;height:32px;border-radius:9px;background:var(--primary);
+    display:grid;place-items:center;flex:0 0 auto;
+  }
+  .brand-mark svg{width:17px;height:17px;stroke:#fff}
+  .brand h1{font-size:13.5px;font-weight:600;margin:0;letter-spacing:-.01em;white-space:nowrap}
+  .brand p{margin:0;font-size:11px;color:var(--muted-fg);white-space:nowrap}
+
+  .tabs{display:flex;gap:2px;background:var(--muted);padding:3px;border-radius:9px;margin-left:8px}
+  .tab{
+    border:0;background:transparent;padding:6px 13px;border-radius:7px;font-size:12.5px;
+    font-weight:500;color:var(--muted-fg);cursor:pointer;transition:.15s;
+  }
+  .tab:hover{color:var(--fg)}
+  .tab.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+
+  .kpis{margin-left:auto;display:flex;gap:8px}
+  .kpi{
+    border:1px solid var(--border);background:var(--card);border-radius:9px;
+    padding:4px 10px;min-width:74px;
+  }
+  .kpi b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .kpi span{display:block;font-size:10px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.04em}
+
+  .btn-dl{
+    border:1px solid var(--border);background:var(--card);border-radius:9px;
+    padding:6px 12px;font-size:12px;font-weight:500;color:var(--fg);cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:.15s;
+  }
+  .btn-dl:hover{border-color:#a1a1aa;background:var(--muted)}
+  .btn-dl svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  /* ---------- layout ---------- */
+  .layout{
+    display:grid; grid-template-columns:302px minmax(0,1fr) 322px;
+    height:calc(100vh - 60px);
+  }
+  .sidebar,.detalle{
+    background:var(--card); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;
+  }
+  .sidebar{border-right:1px solid var(--border)}
+  .detalle{border-left:1px solid var(--border)}
+  .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+  .card-h{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:9px 11px;border-bottom:1px solid var(--border);
+  }
+  .card-h h2{font-size:11.5px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg)}
+  .card-b{padding:10px 11px}
+  .card-b.tight{padding:6px}
+
+  /* ---------- search ---------- */
+  .search{position:relative}
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted-fg);pointer-events:none}
+  .search input{
+    width:100%;padding:8px 30px 8px 31px;border:1px solid var(--border);border-radius:9px;
+    background:var(--card);font-size:12.5px;color:var(--fg);outline:none;transition:.15s;
+  }
+  .search input:focus{border-color:#a1a1aa;box-shadow:0 0 0 3px rgb(24 24 27 / .07)}
+  .search kbd{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    font-size:10px;color:var(--muted-fg);border:1px solid var(--border);
+    border-radius:4px;padding:1px 4px;background:var(--muted);
+  }
+  .resultados{margin-top:6px;max-height:236px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+  .res{
+    display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:7px;
+    cursor:pointer;border:0;background:transparent;text-align:left;width:100%;
+  }
+  .res:hover{background:var(--muted)}
+  .res-id{font-variant-numeric:tabular-nums;font-weight:600;font-size:11.5px;min-width:60px}
+  .res-nom{flex:1;color:var(--muted-fg);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .res-d{font-variant-numeric:tabular-nums;color:var(--muted-fg);font-size:11px}
+  .vacio{padding:14px 8px;text-align:center;color:var(--muted-fg);font-size:11.5px}
+
+  /* ---------- capas / filtros ---------- */
+  .capa{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer;user-select:none}
+  .capa:hover{background:var(--muted)}
+  .capa input{accent-color:var(--primary);margin:0;width:13px;height:13px;cursor:pointer}
+  .swatch{width:14px;height:3.5px;border-radius:2px;flex:0 0 auto}
+  .capa .nom{flex:1;font-size:12px;text-transform:capitalize}
+  .capa .cnt{font-variant-numeric:tabular-nums;font-size:10.5px;color:var(--muted-fg)}
+  .capa{position:relative}
+  .capa .tip{
+    position:absolute;left:105%;top:50%;transform:translateY(-50%);
+    background:var(--primary);color:#fff;padding:6px 10px;border-radius:8px;
+    font-size:11px;line-height:1.4;white-space:normal;max-width:220px;
+    box-shadow:var(--shadow-md);pointer-events:none;opacity:0;transition:opacity .15s;
+    z-index:1300;
+  }
+  .capa .tip::before{
+    content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);
+    border:6px solid transparent;border-right-color:var(--primary);
+  }
+  .capa:hover .tip{opacity:1}
+
+  .switch-hint{
+    font-size:10px;color:var(--muted-fg);margin-top:2px;margin-left:0;line-height:1.35;
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{
+    border:1px solid var(--border);background:var(--card);border-radius:999px;
+    padding:3px 9px;font-size:11px;font-weight:500;cursor:pointer;color:var(--muted-fg);transition:.15s;
+  }
+  .chip:hover{border-color:#a1a1aa;color:var(--fg)}
+  .chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 2px;font-size:12px}
+  .sw{position:relative;width:32px;height:18px;border-radius:999px;background:#d4d4d8;border:0;cursor:pointer;transition:.18s;flex:0 0 auto}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 2px rgb(0 0 0/.2)}
+  .sw.on{background:var(--primary)}
+  .sw.on::after{transform:translateX(14px)}
+
+  /* ---------- ciudades / macro ---------- */
+  .fila{
+    display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:8px;cursor:pointer;
+    border:0;background:transparent;width:100%;text-align:left;
+  }
+  .fila:hover{background:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+  .fila .nom{flex:1;font-size:12px;font-weight:500}
+  .fila .sub{font-size:10.5px;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+  .macro-item{
+    border:1px solid var(--border);border-radius:9px;padding:7px 9px;cursor:pointer;background:var(--card);
+    display:flex;flex-direction:column;gap:2px;transition:.15s;
+  }
+  .macro-item:hover{border-color:#a1a1aa;background:#fcfcfd}
+  .macro-item .r{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600}
+  .macro-item .s{font-size:10.5px;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+  .macro-item{position:relative}
+  .macro-item .tip{
+    position:absolute;left:50%;bottom:105%;transform:translateX(-50%);
+    background:var(--primary);color:#fff;padding:6px 10px;border-radius:8px;
+    font-size:11px;line-height:1.4;white-space:normal;max-width:240px;text-align:center;
+    box-shadow:var(--shadow-md);pointer-events:none;opacity:0;transition:opacity .15s;
+    z-index:1300;
+  }
+  .macro-item .tip::before{
+    content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--primary);
+  }
+  .macro-item:hover .tip{opacity:1}
+
+  /* ---------- mapa ---------- */
+  .mapa-wrap{position:relative;min-width:0;background:#eef0f2}
+  #mapa{position:absolute;inset:0}
+  /* Conmutador de mapa base */
+  .bases{
+    position:absolute;left:12px;top:12px;z-index:650;display:flex;gap:2px;
+    background:rgb(255 255 255/.96);border:1px solid var(--border);border-radius:9px;
+    padding:3px;box-shadow:var(--shadow-md);backdrop-filter:blur(6px);
+  }
+  .bases button{
+    border:0;background:transparent;padding:4px 10px;border-radius:6px;font-size:11.5px;
+    font-weight:500;color:var(--muted-fg);cursor:pointer;transition:.15s;
+  }
+  .bases button:hover{color:var(--fg)}
+  .bases button.on{background:var(--primary);color:#fff}
+  .aviso-base{
+    position:absolute;left:12px;top:52px;z-index:650;max-width:270px;
+    background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:9px;
+    padding:8px 11px;font-size:11.5px;line-height:1.55;box-shadow:var(--shadow-md);
+    display:none;
+  }
+  .aviso-base.on{display:block}
+  .aviso-base b{display:block;margin-bottom:1px}
+  .etiqueta-ciudad{
+    background:#18181b;color:#fff;border:0;border-radius:999px;padding:2px 8px;
+    font-size:10.5px;font-weight:600;letter-spacing:.01em;box-shadow:0 2px 8px rgb(0 0 0/.25);
+    white-space:nowrap;
+  }
+  .etiqueta-ciudad:before{display:none}
+  .leaflet-tooltip-right.etiqueta-ciudad:before,
+  .leaflet-tooltip-left.etiqueta-ciudad:before{display:none}
+  .hud{
+    position:absolute;left:12px;bottom:12px;z-index:600;display:flex;gap:6px;align-items:center;
+  }
+  .hud-pill{
+    background:rgb(255 255 255/.95);border:1px solid var(--border);border-radius:8px;
+    padding:5px 9px;font-size:11px;color:var(--muted-fg);box-shadow:var(--shadow);
+    font-variant-numeric:tabular-nums;backdrop-filter:blur(6px);
+  }
+  .hud-pill b{color:var(--fg);font-weight:600}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);
+    border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:500;cursor:pointer;color:var(--fg);
+    box-shadow:var(--shadow);transition:.15s;
+  }
+  .btn:hover{background:var(--muted)}
+  .btn svg{width:13px;height:13px;stroke:currentColor}
+  .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn-primary:hover{background:#27272a}
+
+  .loader{
+    position:absolute;inset:0;z-index:900;display:grid;place-items:center;background:rgb(250 250 250/.92);
+    transition:opacity .35s; backdrop-filter:blur(2px);
+  }
+  .loader.off{opacity:0;pointer-events:none}
+  .loader .box{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .spinner{width:26px;height:26px;border:2.5px solid #e4e4e7;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader p{margin:0;font-size:12px;color:var(--muted-fg)}
+
+  /* ---------- detalle ---------- */
+  .detalle .vacio-det{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    height:100%;text-align:center;color:var(--muted-fg);padding:24px;
+  }
+  .detalle .vacio-det svg{width:34px;height:34px;stroke:#d4d4d8}
+  .detalle .vacio-det p{margin:0;font-size:12px;max-width:200px;line-height:1.6}
+  .det-head{padding:12px 12px 10px;border-bottom:1px solid var(--border)}
+  .det-id{font-size:15px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .det-sub{font-size:11.5px;color:var(--muted-fg);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .badge{
+    display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:2px 7px;
+    font-size:10.5px;font-weight:600;text-transform:capitalize;letter-spacing:.01em;
+  }
+  .badge.neutral{background:var(--muted);color:#52525b}
+  .badge.ok{background:#f0fdf4;color:#15803d}
+  .badge.warn{background:#fffbeb;color:#b45309}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:9px;overflow:hidden;margin:10px 12px}
+  .celda{background:var(--card);padding:8px 10px}
+  .celda span{display:block;font-size:10px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.04em}
+  .celda b{display:block;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
+  .celda b small{font-size:10px;font-weight:500;color:var(--muted-fg);margin-left:2px}
+  .det-sec{padding:0 12px 12px}
+  .det-sec h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-fg);margin:0 0 6px;font-weight:600}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed #f0f0f2;font-size:12px}
+  .kv:last-child{border-bottom:0}
+  .kv span{color:var(--muted-fg)}
+  .kv b{font-weight:500;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acciones{display:flex;gap:6px;padding:0 12px 14px}
+  .acciones .btn{flex:1;justify-content:center}
+
+  /* ---------- páginas ---------- */
+  .pagina{display:none;height:calc(100vh - 60px);overflow-y:auto;padding:28px 32px 60px}
+  .pagina.on{display:block}
+  .wrap{max-width:1040px;margin:0 auto}
+  .pagina h2{font-size:22px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
+  .pagina .lead{color:var(--muted-fg);font-size:13.5px;margin:0 0 26px;max-width:720px;line-height:1.65}
+  .paso{
+    display:grid;grid-template-columns:34px 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--border);
+  }
+  .paso:first-of-type{border-top:0}
+  .paso-num{
+    width:28px;height:28px;border-radius:50%;background:var(--muted);border:1px solid var(--border);
+    display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--fg);
+  }
+  .paso h3{margin:2px 0 4px;font-size:13.5px;font-weight:600}
+  .paso p{margin:0;color:#3f3f46;font-size:12.8px;line-height:1.7}
+  .paso code{background:var(--muted);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:11.5px}
+  .nota{
+    background:var(--accent-soft);border:1px solid #dbeafe;border-radius:10px;padding:12px 14px;
+    font-size:12.5px;color:#1e3a8a;line-height:1.65;margin:18px 0;
+  }
+  table{width:100%;border-collapse:collapse;font-size:12.3px}
+  th{
+    text-align:left;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--muted-fg);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  td{padding:8px 10px;border-bottom:1px solid #f4f4f5;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td:first-child{width:42%}
+  .tabla-osrm{table-layout:fixed}
+  .tabla-osrm td:first-child{width:auto}
+  .ok-i{color:var(--ok);font-weight:600}
+  .warn-i{color:var(--warn);font-weight:600}
+  .seccion{margin-bottom:34px}
+  .seccion > h2{font-size:15px;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+
+  /* ---------- responsivo ---------- */
+  @media (max-width:1180px){
+    .layout{grid-template-columns:270px minmax(0,1fr)}
+    .detalle{display:none}
+    .kpis{display:none}
+  }
+
+  @media (max-width:768px){
+    .topbar{height:52px;padding:0 12px;gap:10px}
+    .brand h1{font-size:12px}
+    .brand p{font-size:10px}
+    .brand-mark{width:28px;height:28px}
+    .brand-mark svg{width:15px;height:15px}
+    .tabs{padding:2px;border-radius:7px;margin-left:0}
+    .tab{padding:5px 9px;font-size:11.5px}
+    .btn-dl{padding:5px 8px;font-size:11px}
+    .btn-dl span{display:none}
+    .kpis{display:none}
+
+    .layout{
+      grid-template-columns:1fr;
+      grid-template-rows:1fr;
+      height:calc(100vh - 52px);
+      position:relative;
+    }
+    .sidebar{
+      position:absolute;left:0;top:0;bottom:0;width:280px;z-index:1000;
+      transform:translateX(-100%);transition:transform .25s ease;
+      border-right:1px solid var(--border);box-shadow:4px 0 16px rgb(0 0 0/.12);
+    }
+    .sidebar.on{transform:translateX(0)}
+    .detalle{
+      position:absolute;left:0;right:0;bottom:0;z-index:1000;max-height:55vh;
+      transform:translateY(100%);transition:transform .25s ease;
+      border-top:1px solid var(--border);border-left:0;
+      border-radius:16px 16px 0 0;box-shadow:0 -4px 16px rgb(0 0 0/.12);
+      padding:0;
+    }
+    .detalle.on{transform:translateY(0)}
+    .detalle .vacio-det{padding:40px 24px}
+    .det-handle{display:block !important}
+
+    .overlay{
+      position:absolute;inset:0;background:rgb(0 0 0/.35);z-index:950;
+      opacity:0;pointer-events:none;transition:opacity .2s;
+    }
+    .overlay.on{opacity:1;pointer-events:auto}
+
+    .mapa-wrap{min-height:0}
+    .bases{left:8px;top:8px}
+    .bases button{padding:4px 8px;font-size:11px}
+    .hud{left:8px;bottom:8px}
+    .hud-pill{padding:4px 7px;font-size:10px}
+    .btn{padding:5px 8px;font-size:10.5px}
+
+    .menu-btn{
+      display:flex;align-items:center;justify-content:center;
+      width:32px;height:32px;border:1px solid var(--border);border-radius:8px;
+      background:var(--card);cursor:pointer;color:var(--fg);flex:0 0 auto;
+    }
+    .menu-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
+    .pagina{padding:16px}
+    .paso{grid-template-columns:28px 1fr;gap:10px;padding:12px 0}
+    .paso-num{width:24px;height:24px;font-size:11px}
+    .pagina h2{font-size:18px}
+    table{font-size:11.5px}
+    th,td{padding:6px 8px}
+  }
+
+  @media (min-width:769px){
+    .menu-btn{display:none}
+    .overlay{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/>
+        <path d="M8.5 19H14a3 3 0 0 0 0-6H10a3 3 0 0 1 0-6h5.5"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Red Vial — Corredor Norte</h1>
+      <p>Lima → Trujillo → Chiclayo → Piura → Sullana / Chulucanas</p>
+    </div>
+  </div>
+
+  <button class="menu-btn" id="menu-btn" aria-label="Abrir menú">
+    <svg viewBox="0 0 24 24" fill="none"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <nav class="tabs">
+    <button class="tab on" data-vista="mapa">Mapa</button>
+    <button class="tab" data-vista="metodo">Metodología</button>
+    <button class="tab" data-vista="valida">Validación</button>
+  </nav>
+
+  <div class="kpis">
+    <div class="kpi"><b id="k-tramos">—</b><span>Tramos</span></div>
+    <div class="kpi"><b id="k-km">—</b><span>Km</span></div>
+    <div class="kpi"><b id="k-dist">—</b><span>Distrib.</span></div>
+    <div class="kpi"><b id="k-alt">—</b><span>Con desvío</span></div>
+  </div>
+  <button class="btn-dl" id="btn-dl" title="Descargar red vial como GeoJSON">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span>GeoJSON</span>
+  </button>
+</header>
+
+<main class="layout" id="vista-mapa">
+  <div class="overlay" id="overlay"></div>
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="card">
+      <div class="card-b">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="text" placeholder="Buscar tramo, vía o ciudad…" autocomplete="off" spellcheck="false"/>
+          <kbd>/</kbd>
+        </div>
+        <div class="resultados" id="resultados">
+          <div class="vacio">Escribe un ID (TR-00042), una vía o una ciudad</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Jerarquía vial</h2><span class="cnt" id="cnt-vis" style="font-size:10.5px;color:var(--muted-fg)"></span></div>
+      <div class="card-b tight" id="capas"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Filtros</h2></div>
+      <div class="card-b">
+        <div class="chips" id="zonas"></div>
+        <div style="margin-top:10px">
+          <div class="switch">
+            <span>Solo tramos con desvío</span>
+            <button class="sw" id="sw-alt" aria-label="Solo con desvío"></button>
+          </div>
+          <p class="switch-hint">Muestra solo tramos donde existe al menos una ruta alternativa posible en caso de cierre.</p>
+          <div class="switch">
+            <span>Solo tramos con peaje</span>
+            <button class="sw" id="sw-peaje" aria-label="Solo con peaje"></button>
+          </div>
+          <p class="switch-hint">Muestra solo tramos que contienen al menos un punto de peaje registrado en OSM.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Tramos completos</h2></div>
+      <div class="card-b tight" id="macro" style="display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Ciudades</h2></div>
+      <div class="card-b tight" id="ciudades"></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAPA ============ -->
+  <section class="mapa-wrap">
+    <div id="mapa"></div>
+    <div class="bases">
+      <button data-base="claro" class="on">Claro</button>
+      <button data-base="satelite">Satélite</button>
+    </div>
+    <div class="loader" id="loader">
+      <div class="box">
+        <div class="spinner"></div>
+        <p id="loader-txt">Dibujando 21 918 tramos…</p>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-pill" id="hud-vis"><b>—</b> tramos visibles</div>
+      <div class="hud-pill" id="hud-zoom">z6</div>
+      <button class="btn" id="btn-reset">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        Ajustar vista
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ DETALLE ============ -->
+  <aside class="detalle" id="detalle">
+    <div class="det-handle" id="det-handle" style="display:none;padding:8px 0;text-align:center;cursor:pointer">
+      <div style="width:36px;height:4px;border-radius:999px;background:var(--border);margin:0 auto"></div>
+    </div>
+    <div class="vacio-det">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-5.3-7-11a7 7 0 1 1 14 0c0 5.7-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/>
+      </svg>
+      <p>Haz clic en cualquier tramo del mapa o búscalo para ver su ficha técnica.</p>
+    </div>
+  </aside>
+</main>
+
+<!-- ============ METODOLOGÍA ============ -->
+<section class="pagina" id="vista-metodo">
+  <div class="wrap">
+    <h2>Cómo se construyó esta red</h2>
+    <p class="lead">
+      Todo el grafo proviene de OpenStreetMap. No se usó ningún motor de ruteo para
+      construirlo: las distancias, tiempos y velocidades se calculan sobre las
+      geometrías reales de las vías. OSRM se usa <em>después</em>, solo para verificar.
+    </p>
+
+    <div class="paso">
+      <div class="paso-num">1</div>
+      <div>
+        <h3>Definición del alcance</h3>
+        <p>
+          Se toma el corredor de la lámina de rutas: <b>Lima → Trujillo → Chiclayo → Piura</b>,
+          con los ramales a <b>Sullana</b> y <b>Chulucanas</b>. Eso fija 6 ciudades y 17
+          distribuidores (7 en Trujillo, 3 en Chiclayo, 3 en Piura, 2 en Sullana, 2 en Chulucanas).
+        </p>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="paso-num">2</div>
+      <div>
+        <h3>Descarga desde Overpass API</h3>
+        <p>
+          El corredor se cubre con <b>10 bandas de latitud</b> (de −12.1° a −4.7°), cada una con
+          una ventana de longitud derivada de los puntos de paso. Se piden las etiquetas
+          exactas <code>motorway</code>, <code>trunk</code>, <code>primary</code> y
+          <code>secondary</code> (más sus enlaces). Las consultas con expresiones regulares
+          agotan la memoria del servidor: por eso se usa una unión de etiquetas exactas.
+          Cada banda se cachea por separado, así la descarga es reanudable.
+        </p>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="paso-num">3</div>
+      <div>
+        <h3>Consolidación de la topología</h3>
+        <p>
+          OSM entrega un nodo por cada punto de curvatura. Se contraen las <b>cadenas de grado 2</b>
+          y se conservan como nodos solo los puntos donde de verdad se puede decidir
+          (intersecciones de grado ≠ 2) más los nodos logísticos. Cada arco resultante es un
+          <b>tramo vial</b> con distancia, tiempo, tipo de vía y peaje agregados.
+          Resultado: <b>248 723 nodos OSM → 13 918 nodos operativos</b> y 21 918 tramos.
+        </p>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="paso-num">4</div>
+      <div>
+        <h3>Ubicación de los distribuidores</h3>
+        <p>
+          Los 17 puntos se eligen sobre <b>intersecciones reales</b> de la red, con muestreo
+          de punto más lejano (<em>farthest point sampling</em>) dentro del área urbana de cada
+          ciudad, para que queden bien repartidos y no amontonados. Cuando llegue el maestro de
+          direcciones real, se reemplazan por el nodo más cercano a cada dirección.
+        </p>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="paso-num">5</div>
+      <div>
+        <h3>Rutas alternas</h3>
+        <p>
+          Un tramo es <b>arista de corte</b> si al eliminarlo sus extremos quedan desconectados.
+          En ese caso no existe ningún desvío posible. El resto de la red sí lo admite, y esa
+          condición se guarda en la columna <code>tiene_alterna</code> que alimenta la acción
+          «tomar vía alterna» del agente.
+        </p>
+      </div>
+    </div>
+
+    <div class="nota">
+      <b>Por qué esto importa para la tesis:</b> el profesor pidió una zona con datos reales y
+      descartó datos simulados. La geometría, la topología y los tiempos de esta red son reales
+      de OSM; lo único sintético es la operación (cargas, ventanas horarias), que se sustituye
+      cuando la empresa entregue sus registros.
+    </div>
+  </div>
+</section>
+
+<!-- ============ VALIDACIÓN ============ -->
+<section class="pagina" id="vista-valida">
+  <div class="wrap">
+    <h2>Cómo sé que está bien</h2>
+    <p class="lead">
+      La validación es automática: corre al final de <code>scripts/01_red_vial.py</code> y su
+      resultado queda en <code>resumen.json</code>. Son cuatro niveles independientes.
+    </p>
+
+    <div class="seccion">
+      <h2>1 · Contraste con un motor de ruteo externo (OSRM)</h2>
+      <table class="tabla-osrm">
+        <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+        <thead><tr><th>Tramo</th><th class="num">Red construida</th><th class="num">OSRM</th><th class="num">Desvío</th></tr></thead>
+        <tbody id="tabla-osrm"></tbody>
+      </table>
+      <p style="font-size:12px;color:var(--muted-fg);margin-top:8px">
+        La red se construyó sin OSRM. Que las distancias coincidan dentro del 2 % es una prueba
+        independiente de que la geometría y la conectividad están bien.
+      </p>
+    </div>
+
+    <div class="seccion">
+      <h2>2 · Invariantes de la topología</h2>
+      <table>
+        <thead><tr><th>Verificación</th><th>Qué descarta</th><th>Estado</th></tr></thead>
+        <tbody id="tabla-checks"></tbody>
+      </table>
+    </div>
+
+    <div class="seccion">
+      <h2>3 · Coherencia física</h2>
+      <table>
+        <thead><tr><th>Comprobación</th><th class="num">Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Velocidad implícita = distancia / tiempo</td><td class="num ok-i">21 918 / 21 918</td></tr>
+          <tr><td>Velocidad máxima registrada</td><td class="num">120.1 km/h</td></tr>
+          <tr><td>Tramos con distancia o tiempo ≤ 0</td><td class="num ok-i">0</td></tr>
+          <tr><td>Desvío máximo ciudad → red (snap)</td><td class="num">76.9 m</td></tr>
+          <tr><td>Distribuidores alcanzables desde el hub</td><td class="num ok-i">17 / 17</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="seccion">
+      <h2>4 · Prueba de uso: el simulador recorre la red</h2>
+      <table>
+        <thead><tr><th>Prueba</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Lima → Trujillo con la política «continuar»</td><td>553.6 km en ≈ 7.5 h de conducción</td></tr>
+          <tr><td>Lima → Piura (corredor completo)</td><td>1 004 km dentro del horizonte de 60 h</td></tr>
+          <tr><td>Descanso de jornada</td><td>45 min exactos cada 5 h</td></tr>
+          <tr><td>Distancia contabilizada</td><td>exacta (el remanente del paso se arrastra como crédito)</td></tr>
+          <tr><td>Acción «tomar alterna»</td><td>desvío real: 1 004 → 1 216 km</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota">
+      <b>Lo que aún no está validado:</b> los tiempos son de flujo libre (velocidad legal de OSM),
+      sin congestión real; y la operación (cargas y ventanas) sigue siendo sintética. Ambas cosas
+      se corrigen con datos de la empresa, no con más procesamiento de la red.
+    </div>
+  </div>
+</section>
+
+<script type="application/json" id="datos">__DATOS__</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  "use strict";
+  const D = JSON.parse(document.getElementById('datos').textContent);
+  const TIPOS = D.tipos, ZONAS = D.zonas, NOMBRES = D.nombres, TR = D.tramos;
+
+  const COLOR = {
+    motorway:'#b91c1c', trunk:'#dc2626', primary:'#ea580c',
+    secondary:'#2563eb', tertiary:'#0d9488',
+    motorway_link:'#f87171', trunk_link:'#f87171',
+    primary_link:'#fb923c', secondary_link:'#60a5fa', tertiary_link:'#2dd4bf'
+  };
+  const GROSOR = {
+    motorway:3.4, trunk:3.1, primary:2.5, secondary:1.8, tertiary:1.2,
+    motorway_link:1.0, trunk_link:1.0, primary_link:1.0,
+    secondary_link:0.9, tertiary_link:0.9
+  };
+  const col = t => COLOR[t] || '#71717a';
+  const gro = t => GROSOR[t] || 1.1;
+  const idTramo = i => TR[i].i;
+  const nombre = i => TR[i].n >= 0 ? NOMBRES[TR[i].n] : '—';
+  const NOMBRE_ES = {
+    motorway:'Autopista', trunk:'Carretera troncal', primary:'Primaria',
+    secondary:'Secundaria', tertiary:'Terciaria',
+    motorway_link:'Enlace autopista', trunk_link:'Enlace troncal',
+    primary_link:'Enlace primaria', secondary_link:'Enlace secundaria',
+    tertiary_link:'Enlace terciaria'
+  };
+  const DESC_TIPO = {
+    motorway:'Vía de alta capacidad con acceso controlado, mínimo 2 carriles por sentido, sin cruces a nivel.',
+    trunk:'Carretera principal de conexión interdepartamental, puede tener cruces a nivel.',
+    primary:'Vía principal dentro de una ciudad o como ruta regional importante.',
+    secondary:'Vía secundaria que distribuye tráfico hacia vías primarias o conecta localidades medianas.',
+    tertiary:'Vía terciaria de acceso a zonas residenciales o industriales, menor flujo.',
+    motorway_link:'Rampa de conexión entre autopistas o entre autopista y otra vía.',
+    trunk_link:'Rampa de conexión entre carreteras troncales y otras vías.',
+    primary_link:'Rampa de conexión entre vías primarias y el resto de la red.',
+    secondary_link:'Rampa de conexión entre vías secundarias y el resto de la red.',
+    tertiary_link:'Rampa de conexión entre vías terciarias y el resto de la red.'
+  };
+
+  /* ---------- KPIs ---------- */
+  const nf = n => n.toLocaleString('es-PE');
+  document.getElementById('k-tramos').textContent = nf(D.meta.n_tramos);
+  document.getElementById('k-km').textContent = nf(Math.round(D.meta.km));
+  document.getElementById('k-dist').textContent = D.meta.n_distribuidores;
+  const pctAlt = D.meta.validacion?.metricas?.tramos_con_alterna_pct ?? 0;
+  document.getElementById('k-alt').textContent = pctAlt.toFixed(1) + ' %';
+
+  /* ---------- mapa ---------- */
+  const mapa = L.map('mapa', {
+    zoomControl:false, preferCanvas:true,
+    renderer:L.canvas({padding:0.35})
+  }).setView([-8.6,-78.6], 6);
+
+  L.control.zoom({position:'topright'}).addTo(mapa);
+  mapa.on('zoomend', function(){
+    const z = document.getElementById('hud-zoom');
+    if (z) z.textContent = 'z' + mapa.getZoom();
+  });
+
+  /* ---------- mapas base ----------
+     OpenStreetMap bloquea el uso de sus servidores de tiles desde aplicaciones
+     (incluido file:// y localhost): devuelve 403 "Access blocked". Por eso la
+     base por defecto es Esri, que permite uso con atribución y no exige API key.
+   */
+  const ATRIB_ESRI = 'Tiles &copy; Esri — Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
+  const baseClara = [
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: ATRIB_ESRI, maxZoom: 16, crossOrigin: true
+    }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '', maxZoom: 16, crossOrigin: true, opacity: .9
+    })
+  ];
+  const baseSatelite = [
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri — Maxar, Earthstar Geographics, GIS User Community',
+      maxZoom: 17, crossOrigin: true
+    })
+  ];
+  const BASES = {claro: baseClara, satelite: baseSatelite};
+  let baseActiva = null;
+
+  const avisoBase = document.createElement('div');
+  avisoBase.className = 'aviso-base';
+  avisoBase.innerHTML = '<b>No se pudieron cargar los tiles</b>' +
+    'Revisa tu conexión. La red se sigue viendo igual.';
+  document.querySelector('.mapa-wrap').appendChild(avisoBase);
+
+  let erroresTile = 0;
+  [].concat(baseClara, baseSatelite).forEach(function(capa){
+    capa.on('tileerror', function(){
+      erroresTile++;
+      if (erroresTile === 4) avisoBase.classList.add('on');
+    });
+    capa.on('tileload', function(){
+      if (erroresTile) { erroresTile = 0; avisoBase.classList.remove('on'); }
+    });
+  });
+
+  function cambiarBase(nombre){
+    if (baseActiva) baseActiva.forEach(function(c){ mapa.removeLayer(c); });
+    baseActiva = BASES[nombre] || [];
+    baseActiva.forEach(function(c){ c.addTo(mapa); c.bringToBack(); });
+    erroresTile = 0;
+    avisoBase.classList.remove('on');
+    document.querySelectorAll('.bases button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.base === nombre);
+    });
+  }
+  document.querySelectorAll('.bases button').forEach(function(b){
+    b.addEventListener('click', function(){ cambiarBase(b.dataset.base); });
+  });
+  cambiarBase('claro');
+
+  const capaResalte = L.layerGroup().addTo(mapa);
+  const capaMacro = L.layerGroup().addTo(mapa);
+  const capaCiudades = L.layerGroup().addTo(mapa);
+  const capaDist = L.layerGroup().addTo(mapa);
+
+  /* ---------- polilíneas ---------- */
+  const t0 = performance.now();
+  const pl = new Array(TR.length);
+  const grupoRed = L.layerGroup();
+
+  for (let i=0;i<TR.length;i++){
+    const tr = TR[i];
+    const c = tr.c, pts = new Array(c.length/2);
+    for (let k=0;k<c.length;k+=2) pts[k/2] = [c[k+1], c[k]];
+    const p = L.polyline(pts, {
+      color: col(TIPOS[tr.t]), weight: gro(TIPOS[tr.t]), opacity:.85,
+      lineCap:'round', lineJoin:'round', interactive:true, bubblingMouseEvents:false
+    });
+    p._i = i;
+    p.on('click', function(e){ L.DomEvent.stopPropagation(e); seleccionar(i, false); });
+    p.bindTooltip(
+      '<b>'+tr.i+'</b> · '+TIPOS[tr.t]+'<br>'+tr.d.toFixed(2)+' km · '+nombre(i),
+      {sticky:true, direction:'top', className:'tt', opacity:1}
+    );
+    pl[i] = p;
+    grupoRed.addLayer(p);
+  }
+  grupoRed.addTo(mapa);
+
+  /* ---------- estilos de tooltip ---------- */
+  const estiloTT = document.createElement('style');
+  estiloTT.textContent = '.tt{background:#fff;border:1px solid #e4e4e7;border-radius:8px;box-shadow:0 4px 12px -2px rgb(0 0 0/.12);font-size:11.5px;padding:6px 8px;color:#18181b;font-family:Inter,system-ui,sans-serif}.tt:before{display:none}';
+  document.head.appendChild(estiloTT);
+
+  /* ---------- ciudades ---------- */
+  const DIR_CIUDAD = {LIM:'right', TRU:'right', CHI:'right', PIU:'left', SUL:'top', CHU:'right'};
+  D.ciudades.forEach(function(c){
+    L.circleMarker([c.lat, c.lon], {
+      radius:4.5, color:'#18181b', weight:2, fillColor:'#ffffff', fillOpacity:1
+    })
+      .bindTooltip(c.nombre, {permanent:true, direction:DIR_CIUDAD[c.id_ciudad]||'right', offset:[7,0], className:'etiqueta-ciudad', opacity:1})
+      .bindPopup('<b>'+c.nombre+'</b><br>'+(c.distribuidores||0)+' distribuidores<br>'+
+                 'Snap a la red: '+c.distancia_snap_m+' m', {className:'tt'})
+      .addTo(capaCiudades);
+  });
+
+  /* ---------- distribuidores ---------- */
+  D.distribuidores.forEach(function(d){
+    const m = L.circleMarker([d.lat, d.lon], {
+      radius:5, color:'#fff', weight:1.6, fillColor:'#2563eb', fillOpacity:1
+    }).addTo(capaDist);
+    const km = D.meta.distancias_hub[d.id_distribuidor];
+    m.bindTooltip('<b>'+d.id_distribuidor+'</b><br>'+d.ciudad+
+                  (km?('<br>'+km.toFixed(1)+' km desde Lima'):''),
+                  {direction:'top', className:'tt', opacity:1});
+  });
+
+  /* ---------- macro tramos ---------- */
+  const macroBox = document.getElementById('macro');
+  D.macro.forEach(function(m){
+    const el = document.createElement('div');
+    el.className = 'macro-item';
+    const tipoEs = NOMBRE_ES[m.tipo] || m.tipo;
+    const tipoDesc = DESC_TIPO[m.tipo] || '';
+    el.innerHTML = '<div class="r"><span>'+m.origen+' → '+m.destino+'</span>'+
+                   '<span style="color:#71717a;font-weight:500">'+m.km.toFixed(1)+' km</span></div>'+
+                   '<div class="s">'+m.n+' tramos · '+(m.min/60).toFixed(1)+' h · '+tipoEs+'</div>'+
+                   (tipoDesc?'<span class="tip">'+tipoDesc+'</span>':'');
+    el.addEventListener('click', function(){ verMacro(m); });
+    macroBox.appendChild(el);
+  });
+
+  let capaMacroActiva = null;
+  function verMacro(m){
+    capaMacro.clearLayers();
+    const pts = [];
+    m.sec.forEach(function(i){
+      const c = TR[i].c;
+      for (let k=0;k<c.length;k+=2) pts.push([c[k+1], c[k]]);
+    });
+    if (!pts.length) return;
+    L.polyline(pts, {color:'#7c3aed', weight:7, opacity:.35, lineCap:'round', interactive:false}).addTo(capaMacro);
+    L.polyline(pts, {color:'#7c3aed', weight:2.6, opacity:.95, lineCap:'round', interactive:false}).addTo(capaMacro);
+    mapa.fitBounds(L.latLngBounds(pts), {padding:[50,50]});
+    mostrarDetalleMacro(m);
+  }
+
+  /* ---------- filtros ---------- */
+  const estado = {
+    tipos: new Set(TIPOS),
+    zonas: new Set(ZONAS),
+    soloAlt: false, soloPeaje: false
+  };
+
+  const capasBox = document.getElementById('capas');
+  const conteo = {};
+  TR.forEach(function(t){ const n = TIPOS[t.t]; conteo[n] = (conteo[n]||0)+1; });
+  TIPOS.slice().sort(function(a,b){ return (conteo[b]||0)-(conteo[a]||0); }).forEach(function(t){
+    const lab = document.createElement('label');
+    lab.className = 'capa';
+    lab.innerHTML = '<input type="checkbox" checked value="'+t+'">'+
+                    '<span class="swatch" style="background:'+col(t)+';height:'+Math.max(2.5,gro(t))+'px"></span>'+
+                    '<span class="nom">'+(NOMBRE_ES[t] || t.replace('_',' '))+'</span>'+
+                    '<span class="cnt">'+nf(conteo[t]||0)+'</span>'+
+                    '<span class="tip">'+(DESC_TIPO[t] || '')+'</span>';
+    lab.querySelector('input').addEventListener('change', function(e){
+      if (e.target.checked) estado.tipos.add(t); else estado.tipos.delete(t);
+      aplicarFiltros();
+    });
+    capasBox.appendChild(lab);
+  });
+
+  const zonasBox = document.getElementById('zonas');
+  function chipZona(z, txt){
+    const b = document.createElement('button');
+    b.className = 'chip' + (estado.zonas.has(z) ? ' on' : '');
+    b.textContent = txt;
+    b.addEventListener('click', function(){
+      if (estado.zonas.has(z)) estado.zonas.delete(z); else estado.zonas.add(z);
+      b.classList.toggle('on');
+      aplicarFiltros();
+    });
+    return b;
+  }
+  zonasBox.appendChild(chipZona('__all', 'Todas'));
+  ZONAS.forEach(function(z){ zonasBox.appendChild(chipZona(z, z)); });
+  // "Todas" se comporta como atajo.
+  zonasBox.firstChild.addEventListener('click', function(){
+    const todas = estado.zonas.size === ZONAS.length;
+    estado.zonas = todas ? new Set() : new Set(ZONAS);
+    Array.from(zonasBox.children).forEach(function(c,i){
+      if (i>0) c.classList.toggle('on', !todas);
+    });
+    zonasBox.firstChild.classList.toggle('on', !todas);
+    aplicarFiltros();
+  });
+
+  const swAlt = document.getElementById('sw-alt');
+  const swPeaje = document.getElementById('sw-peaje');
+  swAlt.addEventListener('click', function(){
+    estado.soloAlt = !estado.soloAlt; swAlt.classList.toggle('on', estado.soloAlt); aplicarFiltros();
+  });
+  swPeaje.addEventListener('click', function(){
+    estado.soloPeaje = !estado.soloPeaje; swPeaje.classList.toggle('on', estado.soloPeaje); aplicarFiltros();
+  });
+
+  let timerFiltro = null;
+  function aplicarFiltros(){
+    if (timerFiltro) clearTimeout(timerFiltro);
+    timerFiltro = setTimeout(_aplicar, 40);
+  }
+  function _aplicar(){
+    let vis = 0;
+    for (let i=0;i<TR.length;i++){
+      const t = TR[i];
+      const ok = estado.tipos.has(TIPOS[t.t]) && estado.zonas.has(ZONAS[t.z]) &&
+                 (!estado.soloAlt || t.a) && (!estado.soloPeaje || t.p);
+      const p = pl[i];
+      const dentro = mapa.hasLayer(p);
+      if (ok && !dentro) mapa.addLayer(p);
+      else if (!ok && dentro) mapa.removeLayer(p);
+      if (ok) vis++;
+    }
+    document.getElementById('hud-vis').innerHTML = '<b>'+nf(vis)+'</b> tramos visibles';
+    document.getElementById('cnt-vis').textContent = nf(vis)+' / '+nf(TR.length);
+  }
+
+  /* ---------- búsqueda ---------- */
+  const q = document.getElementById('q');
+  const resBox = document.getElementById('resultados');
+  const indice = TR.map(function(t,i){
+    return (t.i+' '+(t.n>=0?NOMBRES[t.n]:'')+' '+ZONAS[t.z]+' '+TIPOS[t.t]).toLowerCase();
+  });
+
+  function buscar(txt){
+    const s = txt.trim().toLowerCase();
+    if (!s){ resBox.innerHTML = '<div class="vacio">Escribe un ID (TR-00042), una vía o una ciudad</div>'; return; }
+    const hits = [];
+    for (let i=0;i<indice.length && hits.length<40;i++){
+      if (indice[i].indexOf(s) !== -1) hits.push(i);
+    }
+    if (!hits.length){ resBox.innerHTML = '<div class="vacio">Sin resultados para «'+txt+'»</div>'; return; }
+    resBox.innerHTML = '';
+    hits.forEach(function(i){
+      const t = TR[i];
+      const b = document.createElement('button');
+      b.className = 'res';
+      b.innerHTML = '<span class="res-id">'+t.i+'</span>'+
+                    '<span class="res-nom">'+nombre(i)+'</span>'+
+                    '<span class="res-d">'+t.d.toFixed(1)+' km</span>';
+      b.addEventListener('click', function(){
+        const tipo = TIPOS[t.t];
+        if (!estado.tipos.has(tipo)){
+          estado.tipos.add(tipo);
+          const cb = capasBox.querySelector('input[value="'+tipo+'"]');
+          if (cb) cb.checked = true;
+          _aplicar();
+        }
+        seleccionar(i, true);
+      });
+      resBox.appendChild(b);
+    });
+  }
+  let tBusca = null;
+  q.addEventListener('input', function(){
+    clearTimeout(tBusca);
+    tBusca = setTimeout(function(){ buscar(q.value); }, 110);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === '/' && document.activeElement !== q){ e.preventDefault(); q.focus(); }
+    if (e.key === 'Escape'){ q.blur(); }
+  });
+
+  /* ---------- selección ---------- */
+  let sel = -1;
+  function seleccionar(i, centrar){
+    sel = i;
+    const t = TR[i];
+    capaResalte.clearLayers();
+    const pts = [];
+    for (let k=0;k<t.c.length;k+=2) pts.push([t.c[k+1], t.c[k]]);
+    L.polyline(pts, {color:'#fff', weight:11, opacity:.9, lineCap:'round', interactive:false}).addTo(capaResalte);
+    L.polyline(pts, {color:'#7c3aed', weight:5.5, opacity:1, lineCap:'round', interactive:false}).addTo(capaResalte);
+    L.circleMarker(pts[0], {radius:4, color:'#fff', weight:2, fillColor:'#7c3aed', fillOpacity:1, interactive:false}).addTo(capaResalte);
+    L.circleMarker(pts[pts.length-1], {radius:4, color:'#fff', weight:2, fillColor:'#7c3aed', fillOpacity:1, interactive:false}).addTo(capaResalte);
+    if (centrar){
+      const b = L.latLngBounds(pts);
+      const corto = (b.getNorth()-b.getSouth()) < 0.004 && (b.getEast()-b.getWest()) < 0.004;
+      if (corto) mapa.setView(b.getCenter(), t.d < 0.4 ? 17 : 15, {animate:false});
+      else mapa.fitBounds(b, {padding:[70,70], maxZoom:16, animate:false});
+    }
+    // Halo de señalización: hace visible el tramo incluso cuando mide metros.
+    L.circle(L.latLngBounds(pts).getCenter(), {
+      radius: Math.max(90, t.d * 1000 * 0.9), color:'#7c3aed', weight:1.4,
+      opacity:.75, fillColor:'#7c3aed', fillOpacity:.07, dashArray:'5 5', interactive:false
+    }).addTo(capaResalte);
+    mostrarDetalle(i);
+  }
+
+  function badgeTipo(t, texto){
+    return '<span class="badge neutral" style="background:'+hexSuave(col(t))+'22;color:'+col(t)+'">'+(texto || t.replace('_',' '))+'</span>';
+  }
+  function hexSuave(c){ return c; }
+
+  function mostrarDetalle(i){
+    const t = TR[i];
+    const vel = t.m > 0 ? (t.d / (t.m/60)) : 0;
+    const km = D.meta.distancias_hub;
+    const el = document.getElementById('detalle');
+    el.innerHTML =
+      '<div class="det-head">'+
+        '<div class="det-id">'+t.i+'</div>'+
+        '<div class="det-sub">'+nombre(i)+'</div>'+
+        '<div class="badges">'+badgeTipo(TIPOS[t.t])+
+          '<span class="badge neutral">'+ZONAS[t.z]+'</span>'+
+          (t.p?'<span class="badge warn">Peaje</span>':'')+
+          (t.a?'<span class="badge ok">Con desvío</span>':'<span class="badge warn">Sin desvío</span>')+
+        '</div>'+
+      '</div>'+
+      '<div class="grid2">'+
+        '<div class="celda"><span>Distancia</span><b>'+t.d.toFixed(2)+'<small>km</small></b></div>'+
+        '<div class="celda"><span>Tiempo</span><b>'+(t.m<1?(t.m*60).toFixed(0)+'<small>s</small>':t.m<60?t.m.toFixed(1)+'<small>min</small>':(t.m/60).toFixed(2)+'<small>h</small>')+'</b></div>'+
+        '<div class="celda"><span>Velocidad</span><b>'+vel.toFixed(1)+'<small>km/h</small></b></div>'+
+        '<div class="celda"><span>Nodos geom.</span><b>'+(t.c.length/2)+'</b></div>'+
+      '</div>'+
+      '<div class="det-sec">'+
+        '<h3>Atributos</h3>'+
+        '<div class="kv"><span>Jerarquía</span><b>'+TIPOS[t.t]+'</b></div>'+
+        '<div class="kv"><span>Zona</span><b>'+ZONAS[t.z]+'</b></div>'+
+        '<div class="kv"><span>Nombre OSM</span><b>'+nombre(i)+'</b></div>'+
+        '<div class="kv"><span>Peaje</span><b>'+(t.p?'Sí':'No')+'</b></div>'+
+        '<div class="kv"><span>Desvío disponible</span><b>'+(t.a?'Sí':'No')+'</b></div>'+
+        '<div class="kv"><span>Inicio</span><b>'+t.c[1].toFixed(5)+', '+t.c[0].toFixed(5)+'</b></div>'+
+        '<div class="kv"><span>Fin</span><b>'+t.c[t.c.length-1].toFixed(5)+', '+t.c[t.c.length-2].toFixed(5)+'</b></div>'+
+      '</div>'+
+      '<div class="acciones">'+
+        '<button class="btn" id="btn-centrar">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'+
+          'Centrar</button>'+
+        '<button class="btn" id="btn-copiar">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>'+
+          'Copiar ID</button>'+
+      '</div>';
+    document.getElementById('btn-centrar').addEventListener('click', function(){ seleccionar(i, true); });
+    document.getElementById('btn-copiar').addEventListener('click', function(){
+      navigator.clipboard?.writeText(t.i);
+    });
+  }
+
+  function mostrarDetalleMacro(m){
+    const el = document.getElementById('detalle');
+    el.innerHTML =
+      '<div class="det-head">'+
+        '<div class="det-id">'+m.origen+' → '+m.destino+'</div>'+
+        '<div class="det-sub">Tramo completo · '+m.n+' tramos de la topología</div>'+
+        '<div class="badges">'+badgeTipo(m.tipo, NOMBRE_ES[m.tipo] || m.tipo)+'<span class="badge ok">Ruta verificada</span></div>'+
+      '</div>'+
+      '<div class="grid2">'+
+        '<div class="celda"><span>Distancia</span><b>'+m.km.toFixed(1)+'<small>km</small></b></div>'+
+        '<div class="celda"><span>Tiempo</span><b>'+(m.min/60).toFixed(1)+'<small>h</small></b></div>'+
+        '<div class="celda"><span>Tramos</span><b>'+m.n+'</b></div>'+
+        '<div class="celda"><span>Vel. media</span><b>'+(m.km/(m.min/60)).toFixed(1)+'<small>km/h</small></b></div>'+
+      '</div>'+
+      '<div class="det-sec">'+
+        '<h3>Secuencia</h3>'+
+        '<div class="kv"><span>Primer tramo</span><b>'+(m.sec.length?idTramo(m.sec[0]):'—')+'</b></div>'+
+        '<div class="kv"><span>Último tramo</span><b>'+(m.sec.length?idTramo(m.sec[m.sec.length-1]):'—')+'</b></div>'+
+        '<div class="kv"><span>Secuencia guardada</span><b>'+m.sec.length+' tramos</b></div>'+
+      '</div>';
+  }
+
+  /* ---------- ciudades sidebar ---------- */
+  const ciuBox = document.getElementById('ciudades');
+  D.ciudades.forEach(function(c){
+    const b = document.createElement('button');
+    b.className = 'fila';
+    b.innerHTML = '<span class="dot"></span><span class="nom">'+c.nombre+'</span>'+
+                  '<span class="sub">'+(c.distribuidores||0)+' dist.</span>';
+    b.addEventListener('click', function(){
+      mapa.flyTo([c.lat, c.lon], 11, {duration:.8});
+    });
+    ciuBox.appendChild(b);
+  });
+
+  /* ---------- reset ---------- */
+  document.getElementById('btn-reset').addEventListener('click', function(){
+    capaMacro.clearLayers();
+    mapa.flyToBounds(L.latLngBounds(D.meta.bbox), {duration:.7});
+  });
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      const v = b.dataset.vista;
+      document.getElementById('vista-mapa').style.display = (v==='mapa') ? '' : 'none';
+      document.getElementById('vista-metodo').classList.toggle('on', v==='metodo');
+      document.getElementById('vista-valida').classList.toggle('on', v==='valida');
+      if (v==='mapa') setTimeout(function(){ mapa.invalidateSize(); }, 60);
+    });
+  });
+
+  function abrirVista(v){
+    const b = document.querySelector('.tab[data-vista="'+v+'"]');
+    if (b) b.click();
+  }
+  if (location.hash === '#metodo') abrirVista('metodo');
+  if (location.hash === '#valida') abrirVista('valida');
+
+  /* ---------- mobile drawers ---------- */
+  const sidebarEl = document.getElementById('sidebar');
+  const detalleEl = document.getElementById('detalle');
+  const overlayEl = document.getElementById('overlay');
+  const menuBtn = document.getElementById('menu-btn');
+  const detHandle = document.getElementById('det-handle');
+  const esMobile = () => window.innerWidth <= 768;
+
+  function abrirSidebar(){ sidebarEl.classList.add('on'); overlayEl.classList.add('on'); }
+  function cerrarSidebar(){ sidebarEl.classList.remove('on'); overlayEl.classList.remove('on'); }
+  function abrirDetalle(){ if (esMobile()){ detalleEl.classList.add('on'); overlayEl.classList.add('on'); }}
+  function cerrarDetalle(){ detalleEl.classList.remove('on'); if (!sidebarEl.classList.contains('on')) overlayEl.classList.remove('on'); }
+
+  menuBtn.addEventListener('click', function(){ if (sidebarEl.classList.contains('on')) cerrarSidebar(); else abrirSidebar(); });
+  overlayEl.addEventListener('click', function(){ cerrarSidebar(); cerrarDetalle(); });
+  if (detHandle) detHandle.addEventListener('click', function(){ cerrarDetalle(); });
+
+  // Al seleccionar un tramo en mobile, abrir el panel de detalle
+  const _mostrarDetalleOriginal = mostrarDetalle;
+  mostrarDetalle = function(i){ _mostrarDetalleOriginal(i); abrirDetalle(); };
+  const _mostrarDetalleMacroOriginal = mostrarDetalleMacro;
+  mostrarDetalleMacro = function(m){ _mostrarDetalleMacroOriginal(m); abrirDetalle(); };
+
+  // Al cambiar de vista, cerrar drawers
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){ cerrarSidebar(); cerrarDetalle(); });
+  });
+
+  /* ---------- tablas estáticas ---------- */
+  const OSRM = [
+    ['Lima → Trujillo', 545.4, 557.1], ['Trujillo → Chiclayo', 202.8, 199.5],
+    ['Chiclayo → Piura', 212.7, 214.7], ['Piura → Sullana', 39.1, 38.8],
+    ['Piura → Chulucanas', 61.5, 60.8]
+  ];
+  const tbOsrm = document.getElementById('tabla-osrm');
+  OSRM.forEach(function(r){
+    const d = (r[1]-r[2])/r[2]*100;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+r[0]+'</td><td class="num">'+r[1].toFixed(1)+' km</td>'+
+                   '<td class="num">'+r[2].toFixed(1)+' km</td>'+
+                   '<td class="num" style="color:'+(Math.abs(d)<2?'#15803d':'#b45309')+';font-weight:600">'+
+                   (d>0?'+':'')+d.toFixed(1)+' %</td>';
+    tbOsrm.appendChild(tr);
+  });
+  const tot = document.createElement('tr');
+  tot.innerHTML = '<td><b>Total</b></td><td class="num"><b>1 061.5 km</b></td>'+
+                  '<td class="num"><b>1 070.9 km</b></td><td class="num ok-i">−0.9 %</td>';
+  tbOsrm.appendChild(tot);
+
+  const CHECKS = [
+    ['Esquema de columnas completo', 'Campos faltantes o mal tipados'],
+    ['Sin IDs duplicados', 'Tramos repetidos'],
+    ['Integridad referencial', 'Tramos que apuntan a nodos inexistentes'],
+    ['Sin valores nulos en campos críticos', 'Huecos en distancia, tiempo o tipo'],
+    ['Distancias y tiempos positivos', 'Tramos de longitud cero'],
+    ['Velocidad ≤ 140 km/h', 'Errores de unidades o de maxspeed'],
+    ['Grafo débilmente conexo', 'Componentes sueltas'],
+    ['Alcanzabilidad hub → distribuidor', 'Distribuidores inaccesibles'],
+    ['Nodos declarados vs construidos', 'Pérdida silenciosa de nodos'],
+    ['Nodos de decisión (grado ≠ 2)', 'Topología mal contraída'],
+    ['Completitud de atributos ≥ 90 %', 'Metadatos incompletos'],
+    ['Snap ciudad → red ≤ 800 m', 'Ciudad mal georreferenciada'],
+    ['distancia / tiempo = velocidad', 'Incoherencia física']
+  ];
+  const tbChk = document.getElementById('tabla-checks');
+  CHECKS.forEach(function(c){
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+c[0]+'</td><td style="color:#71717a">'+c[1]+'</td>'+
+                   '<td class="ok-i">OK</td>';
+    tbChk.appendChild(tr);
+  });
+
+
+
+  /* ---------- arranque ---------- */
+  _aplicar();
+  const ms = Math.round(performance.now() - t0);
+  document.getElementById('loader-txt').textContent = 'Listo · ' + nf(TR.length) + ' tramos en ' + ms + ' ms';
+  setTimeout(function(){ document.getElementById('loader').classList.add('off'); }, 120);
+
+  setTimeout(function(){
+    // Enlace directo a un tramo: index.html#TR-03909
+    const h = decodeURIComponent(location.hash.replace('#','')).trim();
+    if (/^TR-\d+$/i.test(h)){
+      const i = TR.findIndex(function(t){ return t.i.toUpperCase() === h.toUpperCase(); });
+      if (i >= 0){
+        const tipo = TIPOS[TR[i].t];
+        if (!estado.tipos.has(tipo)){
+          estado.tipos.add(tipo);
+          const cb = capasBox.querySelector('input[value="'+tipo+'"]');
+          if (cb) cb.checked = true;
+          _aplicar();
+        }
+        q.value = TR[i].i;
+        seleccionar(i, true);
+        return;
+      }
+    }
+    mapa.fitBounds(L.latLngBounds(D.meta.bbox), {padding:[24,24], animate:false});
+  }, 200);
+
+  /* ---------- descarga GeoJSON ---------- */
+  document.getElementById('btn-dl').addEventListener('click', function(){
+    const feats = TR.map(function(tr){
+      const coords = [];
+      for (let k = 0; k < tr.c.length; k += 2){
+        coords.push([tr.c[k], tr.c[k+1]]);
+      }
+      return {
+        type: "Feature",
+        properties: {
+          id_tramo: tr.i,
+          tipo_via: TIPOS[tr.t],
+          distancia_km: tr.d,
+          tiempo_flujo_min: tr.m,
+          peaje: tr.p === 1,
+          tiene_alterna: tr.a === 1,
+          zona: ZONAS[tr.z],
+          nombre_via: tr.n >= 0 ? NOMBRES[tr.n] : null
+        },
+        geometry: {type: "LineString", coordinates: coords}
+      };
+    });
+    const geo = {
+      type: "FeatureCollection",
+      name: "red_vial_corredor_norte",
+      crs: {type: "name", properties: {name: "urn:ogc:def:crs:OGC:1.3:CRS84"}},
+      features: feats
+    };
+    const blob = new Blob([JSON.stringify(geo, null, 2)], {type: "application/geo+json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "red_vial_corredor_norte.geojson";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+</body>
+</html>

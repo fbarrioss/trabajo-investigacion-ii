@@ -1,0 +1,169 @@
+# =============================================================================
+# Escenario operativo — Corredor Norte (Lima → Trujillo → Chiclayo → Piura →
+# Sullana → Chulucanas)
+#
+# Fuente de la definición de zonas y distribuidores: reunión de trabajo del
+# 16/10/2026 (imagen "rutas.jpeg" compartida por Wilson Ibarra).
+# Las coordenadas de los distribuidores son PLACEHOLDERS georreferenciados
+# dentro del área urbana de cada ciudad; deben reemplazarse por las
+# direcciones reales cuando Wilson entregue el maestro de puntos de entrega.
+# =============================================================================
+
+version: "1.0"
+nombre: corredor_norte_peru
+descripcion: >
+  Corredor logístico de la Panamericana Norte (PE-1N) que concentra la
+  operación de carga con mayor disponibilidad de datos de la empresa.
+
+# --- Ámbito geográfico -------------------------------------------------------
+ambito:
+  pais: Peru
+  region: Costa norte
+  justificacion: >
+    El profesor Wester Zela indicó (sesión 16/10/2026) que el alcance debe
+    acotarse a la zona donde existan datos reales. Se selecciona la costa
+    norte porque concentra el 100 % de los viajes registrados por la empresa.
+
+# --- Nodos logísticos --------------------------------------------------------
+# tipo: hub | ciudad | distribuidor
+# Los distribuidores se generan a partir del polígono urbano de cada ciudad.
+ciudades:
+  - id: LIM
+    nombre: Lima
+    lat: -12.0464
+    lon: -77.0428
+    rol: hub_origen
+    distribuidores: 0        # Lima actúa como CEDI de origen
+  - id: TRU
+    nombre: Trujillo
+    lat: -8.1116
+    lon: -79.0287
+    rol: ciudad_destino
+    distribuidores: 7
+  - id: CHI
+    nombre: Chiclayo
+    lat: -6.7714
+    lon: -79.8409
+    rol: ciudad_destino
+    distribuidores: 3
+  - id: PIU
+    nombre: Piura
+    lat: -5.1945
+    lon: -80.6328
+    rol: ciudad_destino
+    distribuidores: 3
+  - id: SUL
+    nombre: Sullana
+    lat: -4.9039
+    lon: -80.6853
+    rol: ciudad_destino
+    distribuidores: 2
+  - id: CHU
+    nombre: Chulucanas
+    lat: -5.0925
+    lon: -80.1625
+    rol: ciudad_destino
+    distribuidores: 2
+
+# --- Conexiones del corredor -------------------------------------------------
+# Orden de la imagen "rutas.jpeg": Lima → Trujillo → Chiclayo → Piura →
+# Sullana, con el ramal Piura → Chulucanas. Define los "tramos completos"
+# (macro-tramos) que se reportan en el capítulo de resultados.
+corredor:
+  - {origen: LIM, destino: TRU}
+  - {origen: TRU, destino: CHI}
+  - {origen: CHI, destino: PIU}
+  - {origen: PIU, destino: SUL}
+  - {origen: PIU, destino: CHU}
+
+# --- Red vial ----------------------------------------------------------------
+red_vial:
+  modo: osm              # osm | curada (fallback sin internet)
+  tipo_red: drive
+  # Filtro de vías interurbanas: reduce el grafo a la red de largo recorrido.
+  filtro_vias: '["highway"~"motorway|trunk|primary|secondary"]'
+  # Tolerancia de snapping (m) entre un distribuidor y el nodo más cercano.
+  tolerancia_snap_m: 800
+  # Distancia mínima (m) para consolidar un tramo (elimina micro-segmentos).
+  longitud_minima_tramo_m: 150
+  # Caché del grafo descargado.
+  cache_dir: data/raw/osm
+  crs: EPSG:32718       # UTM zona 18S (Perú centro/norte)
+
+# --- Modelo de costos operativos --------------------------------------------
+costos:
+  moneda: PEN
+  combustible_por_km: 1.95        # S/ por km (camión 12 t, diésel)
+  peaje_por_km: 0.18              # S/ por km (promedio corredor norte)
+  mantenimiento_por_km: 0.42      # S/ por km
+  costo_hora_conductor: 18.50     # S/ por hora
+  costo_hora_detencion: 64.00     # S/ por hora (Tabla 1 del plan de tesis)
+  penalidad_hora_retraso: 120.00  # S/ por hora fuera de ventana
+
+# --- Flota -------------------------------------------------------------------
+flota:
+  n_vehiculos: 3                  # ~3 unidades/día según Wilson
+  tipos:
+    - id: CAM_8T
+      nombre: Camión 8 t
+      capacidad_t: 8
+      velocidad_max_kmh: 90
+      consumo_km_l: 3.2
+      peso: 0.30
+    - id: CAM_12T
+      nombre: Camión cerrado 12 t
+      capacidad_t: 12
+      velocidad_max_kmh: 85
+      consumo_km_l: 2.8
+      peso: 0.45
+    - id: TRA_25T
+      nombre: Tráiler 25 t
+      capacidad_t: 25
+      velocidad_max_kmh: 80
+      consumo_km_l: 2.1
+      peso: 0.25
+
+# --- Ventanas horarias -------------------------------------------------------
+ventanas:
+  hora_inicio_operacion: 4        # 04:00
+  hora_fin_operacion: 22         # 22:00
+  holgura_entrega_min: 60        # tolerancia antes de marcar incumplimiento
+  ventana_por_defecto: [8, 18]   # [hora_inicio, hora_fin] de recepción
+
+# --- Eventos dinámicos (calibración SUTRAN/MTC) ------------------------------
+eventos:
+  # Indicador SUTRAN/MTC 2025 (Tabla 1 del plan de tesis): proporción de
+  # RUTAS afectadas por bloqueos o eventos climáticos. El generador calibra la
+  # probabilidad por tramo para reproducir este objetivo.
+  tasa_rutas_objetivo: 0.276
+  # Tramos que recorre una ruta típica del corredor (Lima→Piura).
+  tramos_por_ruta: 250
+  # Probabilidad de que un tramo experimente cada tipo de evento en 24 h.
+  # Son valores *relativos* entre tipos; la escala absoluta la fija la
+  # calibración contra `tasa_rutas_objetivo`.
+  probabilidad_base:
+    congestion: 0.240
+    bloqueo: 0.055
+    clima: 0.090
+    averia: 0.030
+  duracion_horas:
+    congestion: [1, 4]
+    bloqueo: [2, 12]
+    clima: [1, 6]
+    averia: [2, 8]
+  severidad:            # multiplicador de tiempo de recorrido
+    congestion: [1.3, 2.2]
+    bloqueo: [8.0, 20.0]   # tramo prácticamente intransitable
+    clima: [1.2, 1.8]
+    averia: [4.0, 9.0]
+  # Zonas con mayor incidencia histórica (pesos relativos por ciudad).
+  riesgo_por_zona:
+    LIM: 1.4
+    TRU: 1.1
+    CHI: 1.0
+    PIU: 1.2
+    SUL: 0.9
+    CHU: 0.8
+
+# --- Semilla y reproducibilidad ---------------------------------------------
+semilla: 20261016

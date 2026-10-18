@@ -1,0 +1,88 @@
+# =============================================================================
+# Configuración de entrenamiento y evaluación — DSR-MARL
+# Alineada a la Tabla 3 del plan de tesis (factores / ratios / parámetros)
+# =============================================================================
+
+algoritmo:
+  # Algoritmo principal: QMIX (cooperativo, CTDE, value-based)
+  # Justificación en docs/03_seleccion_algoritmo.md
+  principal: qmix
+  # Alternativa actor-crítico para el contraste interno (H5)
+  alternativo: mappo
+
+entorno:
+  n_agentes: 3                  # unidades vehiculares por episodio
+  horizonte_pasos: 240          # pasos máximos por episodio
+  duracion_paso_min: 15         # cada paso = 15 min de operación
+  ventana_entrega_min: 60       # holgura de la ventana horaria
+  max_replanificaciones: 12     # tope por agente y episodio
+  observacion: local            # ejecución descentralizada
+  estado_global: true           # entrenamiento centralizado (CTDE)
+  # Regla de jornada del conductor (entidad "jornada_conductor").
+  descanso_cada_h: 5.0          # horas de conducción continua antes del descanso
+  descanso_min: 45              # duración del descanso obligatorio
+
+recompensa:
+  # Pesos calibrados con la jerarquía de prioridades del plan de tesis.
+  # El costo se normaliza por el costo/paso de la ruta planificada, por lo que
+  # el término vale ~1.0 en operación normal y >1 en desvíos o esperas.
+  w_puntualidad: 1.00
+  w_costo: 0.50
+  w_tiempo: 0.10
+  w_desvio: 0.30
+  w_replanificacion: 0.10
+  bonus_entrega: 8.00
+  penalidad_incumplimiento: 5.00
+  penalidad_bloqueo: 1.50
+  escala_costo: 500.0           # (legado) normalización de referencia
+  escala_tiempo: 600.0          # (legado) normalización de referencia
+
+qmix:
+  lr: 0.0005
+  gamma: 0.99
+  batch_size: 32
+  buffer_size: 50000
+  target_update_interval: 200
+  hidden_dim: 64
+  mixing_embed_dim: 32
+  epsilon_inicio: 1.0
+  epsilon_fin: 0.05
+  epsilon_decay_pasos: 20000
+  grad_norm_clip: 10.0
+
+mappo:
+  lr_actor: 0.0003
+  lr_critico: 0.0005
+  gamma: 0.99
+  lambda_gae: 0.95
+  clip_epsilon: 0.2
+  epochs: 4
+  batch_size: 2048
+  hidden_dim: 64
+
+entrenamiento:
+  episodios: 2000
+  eval_cada: 50
+  episodios_eval: 20
+  semillas: [1, 2, 3, 4, 5]
+  guardar_dir: artifacts/modelos
+  log_dir: artifacts/logs
+  device: cpu
+
+evaluacion:
+  baselines:
+    - ruta_mas_corta_dijkstra
+    - heuristica_vrp_ortools
+    - politica_estatica
+  metricas:
+    - costo_total_pen
+    - tiempo_total_min
+    - puntualidad_pct
+    - cumplimiento_ventana_pct
+    - desviacion_ruta_km
+    - n_replanificaciones
+    - tiempo_detenido_min
+    - recompensa_promedio
+    - resiliencia_pct
+  alpha: 0.05
+  n_bootstrap: 10000

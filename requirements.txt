@@ -1,0 +1,14 @@
+# Entorno: Python 3.13
+numpy>=2.0
+pandas>=2.2
+pyarrow>=15.0
+networkx>=3.4
+scipy>=1.13
+PyYAML>=6.0
+matplotlib>=3.9
+tqdm>=4.66
+shapely>=2.0
+geopandas>=1.0
+osmnx>=2.0
+torch>=2.4
+ortools>=9.10

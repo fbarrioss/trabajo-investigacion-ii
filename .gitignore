@@ -1,0 +1,53 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+*.ipynb
+
+# ─— Entorno ──
+.env
+.env.local
+
+# ── Datos descargados / generados (se regeneran con los scripts) ──
+data/raw/
+data/processed/
+!data/.gitkeep
+
+# ── Cache de descargas / logs temporales ──
+cache/
+*.log
+
+# ── Dashboard generado (se builda con build_dashboard.py) ──
+dashboard/index.html
+dashboard/*.png
+dashboard/*.jpg
+dashboard/.gitignore
+!dashboard/plantilla.html
+!dashboard/build_dashboard.py
+
+# ── Artefactos de entrenamiento / logs ──
+artifacts/logs/*.csv
+artifacts/historial/*.csv
+artifacts/modelos/*.pt
+artifacts/evaluacion/*.csv
+
+# ── OS / IDE ──
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Sistema WorkBuddy ──
+.workbuddy-ai/

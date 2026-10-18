@@ -1,0 +1,146 @@
+{
+  "conductor": [
+    "id_conductor",
+    "licencia_categoria",
+    "anios_experiencia",
+    "hora_inicio_jornada",
+    "horas_max_conduccion",
+    "descanso_obligatorio_min",
+    "zona_base"
+  ],
+  "vehiculo": [
+    "id_vehiculo",
+    "tipo_vehiculo",
+    "capacidad_t",
+    "capacidad_m3",
+    "velocidad_max_kmh",
+    "consumo_km_l",
+    "anio_fabricacion",
+    "estado"
+  ],
+  "jornada_conductor": [
+    "id_jornada",
+    "id_conductor",
+    "id_vehiculo",
+    "fecha",
+    "hora_inicio",
+    "hora_fin",
+    "horas_conduccion",
+    "horas_descanso",
+    "cumple_regulacion"
+  ],
+  "punto_descanso": [
+    "id_punto",
+    "nombre",
+    "lat",
+    "lon",
+    "km_corredor",
+    "tiene_servicios"
+  ],
+  "cliente": [
+    "id_cliente",
+    "id_nodo_entrega",
+    "ciudad",
+    "ventana_inicio",
+    "ventana_fin",
+    "prioridad"
+  ],
+  "carga": [
+    "id_carga",
+    "tipo_carga",
+    "peso_t",
+    "volumen_m3",
+    "requiere_refrigeracion",
+    "fragilidad"
+  ],
+  "viaje": [
+    "id_viaje",
+    "id_vehiculo",
+    "id_conductor",
+    "id_nodo_origen",
+    "id_nodo_destino",
+    "fecha_planificada",
+    "hora_salida_plan",
+    "hora_llegada_plan",
+    "distancia_plan_km",
+    "costo_plan_pen",
+    "estado"
+  ],
+  "detalle_carga": [
+    "id_detalle",
+    "id_viaje",
+    "id_carga",
+    "id_cliente",
+    "orden_entrega"
+  ],
+  "detalle_entrega": [
+    "id_entrega",
+    "id_viaje",
+    "id_cliente",
+    "id_nodo_entrega",
+    "hora_llegada_real",
+    "hora_salida_real",
+    "ventana_inicio",
+    "ventana_fin",
+    "cumple_ventana",
+    "minutos_retraso",
+    "estado"
+  ],
+  "gasto_viaje": [
+    "id_gasto",
+    "id_viaje",
+    "concepto",
+    "monto_pen",
+    "km_asociados",
+    "horas_asociadas"
+  ],
+  "nodo": [
+    "id_nodo",
+    "nombre",
+    "tipo",
+    "lat",
+    "lon",
+    "ciudad_id",
+    "es_decision",
+    "grado_salida"
+  ],
+  "tramo_vial": [
+    "id_tramo",
+    "id_nodo_ini",
+    "id_nodo_fin",
+    "nombre",
+    "tipo_via",
+    "distancia_km",
+    "velocidad_flujo_kmh",
+    "tiempo_flujo_min",
+    "peaje",
+    "es_alternativa",
+    "tiene_alterna",
+    "bidireccional",
+    "zona",
+    "sinuosidad",
+    "riesgo_base"
+  ],
+  "evento": [
+    "id_evento",
+    "id_tramo",
+    "tipo_evento",
+    "hora_inicio",
+    "hora_fin",
+    "severidad",
+    "fuente",
+    "descripcion"
+  ],
+  "decision_operativa": [
+    "id_decision",
+    "id_viaje",
+    "id_agente",
+    "hora",
+    "id_nodo",
+    "id_tramo_actual",
+    "accion",
+    "accion_nombre",
+    "recompensa",
+    "estado_resumen"
+  ]
+}
