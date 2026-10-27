@@ -651,6 +651,10 @@ def macro_tramos(
     Lima a Piura"): agrega todos los tramos elementales de la topología en un
     único registro por par origen–destino, con su distancia, tiempo y la
     secuencia de tramos que lo componen.
+
+    Los pares del corredor declarado y los de las zonas de extensión se
+    reportan con la columna ``alcance`` (``corredor`` | ``extension``) para
+    poder sumarlos por separado.
     """
     import networkx as nx
 
@@ -659,7 +663,10 @@ def macro_tramos(
     nombre_de = dict(zip(ciudades["id_ciudad"], ciudades["nombre"]))
     filas: list[dict[str, Any]] = []
 
-    for origen_id, destino_id in esc.conexiones:
+    pares = [(o, d, "corredor") for o, d in esc.conexiones]
+    pares += [(o, d, "extension") for o, d in esc.extensiones if (o, d) not in esc.conexiones]
+
+    for origen_id, destino_id, alcance in pares:
         o, d = nodo_de.get(origen_id), nodo_de.get(destino_id)
         if o is None or d is None or o not in G or d not in G:
             log.warning("Macro-tramo %s→%s: nodo ausente en el grafo", origen_id, destino_id)
@@ -690,6 +697,7 @@ def macro_tramos(
                 "id_macro": f"{origen_id}-{destino_id}",
                 "origen": nombre_de.get(origen_id, origen_id),
                 "destino": nombre_de.get(destino_id, destino_id),
+                "alcance": alcance,
                 "id_nodo_origen": o,
                 "id_nodo_destino": d,
                 "distancia_km": round(km, 1),
@@ -697,7 +705,7 @@ def macro_tramos(
                 "n_tramos": len(ids_tramos),
                 "tramos_con_peaje": peajes,
                 "tipo_via_dominante": _tipo_dominante(vias),
-                "secuencia_tramos": ";".join(ids_tramos[:200]),
+                "secuencia_tramos": ";".join(ids_tramos),
             }
         )
 

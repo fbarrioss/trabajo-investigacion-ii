@@ -125,8 +125,26 @@ no alteran la ruta óptima entre las seis ciudades del plan de tesis:
 
 | Par | Distancia por red | Tiempo | Referencia |
 |---|---|---|---|
-| Lima → Huancayo | **303.3 km** | 5.0 h | ~300 km, 5–6 h por la Carretera Central |
+| Lima → Huancayo | **303.3 km** | 5.2 h | ~300 km, 5–6 h por la Carretera Central |
 | Piura → Paita | **57.7 km** | 0.6 h | ~57 km por la PE-1N |
+
+### 4.2 Tramos completos de las extensiones
+
+Los dos pares anteriores se reportan como macro-tramos propios, con
+`alcance: extension`, para no alterar el total del corredor declarado en la
+tesis. `corredor_macro.csv` pasa de 5 a 7 filas y ahora guarda la **secuencia
+completa** de tramos (antes se truncaba a 200, de modo que Lima → Trujillo
+—352 tramos— se dibujaba solo hasta la mitad).
+
+| Grupo | Rutas | Distancia | Tiempo |
+|---|---|---|---|
+| Corredor | 5 | 1 061.5 km | 13.9 h |
+| Extensiones | 2 | 361.0 km | 5.8 h |
+
+El dashboard refleja esa separación: el panel «Tramos completos» agrupa las
+rutas en *Corredor norte* y *Zonas de extensión* con su subtotal, y el botón
+**GeoJSON** exporta cuatro capas (red completa, red filtrada, nodos logísticos y
+tramos completos).
 
 ## 5. Efecto sobre el benchmark
 

@@ -96,6 +96,14 @@ corredor:
   - {origen: PIU, destino: SUL}
   - {origen: PIU, destino: CHU}
 
+# --- Conexiones de las zonas de extensión ------------------------------------
+# No son parte del corredor de la tesis: son los tramos completos que exigen
+# los destinos reales que quedaban fuera del ámbito (Carretera Central y el
+# ramal a Paita). Se reportan aparte para no alterar el total del corredor.
+extensiones:
+  - {origen: LIM, destino: HUY}
+  - {origen: PIU, destino: PAI}
+
 # --- Red vial ----------------------------------------------------------------
 red_vial:
   modo: osm              # osm | curada (fallback sin internet)

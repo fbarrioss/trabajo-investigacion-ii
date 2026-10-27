@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Red Vial — Corredor Norte del Perú</title>
+<title>Red vial del ámbito — corredor norte, Carretera Central y Paita</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -67,6 +67,35 @@
   }
   .btn-dl:hover{border-color:#a1a1aa;background:var(--muted)}
   .btn-dl svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .btn-dl[aria-expanded="true"]{border-color:#a1a1aa;background:var(--muted)}
+  .btn-dl .caret{width:11px;height:11px;stroke:var(--muted-fg)}
+
+  /* ---------- menú de descarga ---------- */
+  .dl-wrap{position:relative;flex:0 0 auto}
+  .dl-menu{
+    position:absolute;right:0;top:calc(100% + 6px);width:272px;z-index:1400;
+    background:var(--card);border:1px solid var(--border);border-radius:11px;
+    box-shadow:var(--shadow-md);padding:5px;display:none;
+  }
+  .dl-menu.on{display:block}
+  .dl-menu button{
+    display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;
+    border:0;background:transparent;border-radius:8px;padding:7px 9px;cursor:pointer;
+  }
+  .dl-menu button:hover{background:var(--muted)}
+  .dl-menu button b{font-size:12px;font-weight:600;color:var(--fg)}
+  .dl-menu button span{font-size:10.5px;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+  .dl-menu .sep{height:1px;background:var(--border);margin:4px 6px}
+  .dl-menu .foot{padding:6px 9px 4px;font-size:10px;color:var(--muted-fg);line-height:1.35}
+
+  /* ---------- aviso flotante ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translate(-50%,14px);
+    background:var(--primary);color:#fff;border-radius:10px;padding:9px 14px;
+    font-size:12px;box-shadow:var(--shadow-md);z-index:2000;opacity:0;
+    transition:opacity .2s,transform .2s;pointer-events:none;max-width:min(92vw,420px);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
 
   /* ---------- layout ---------- */
   .layout{
@@ -317,15 +346,18 @@
   }
 
   @media (max-width:768px){
-    .topbar{height:52px;padding:0 12px;gap:10px}
-    .brand h1{font-size:12px}
-    .brand p{font-size:10px}
+    .topbar{height:52px;padding:0 10px;gap:6px}
+    /* En móvil la marca se reduce al símbolo: el título completo no cabe junto
+       a las pestañas y el botón de descarga. */
+    .brand h1,.brand p{display:none}
     .brand-mark{width:28px;height:28px}
     .brand-mark svg{width:15px;height:15px}
-    .tabs{padding:2px;border-radius:7px;margin-left:0}
-    .tab{padding:5px 9px;font-size:11.5px}
-    .btn-dl{padding:5px 8px;font-size:11px}
+    .tabs{padding:2px;border-radius:7px;margin-left:0;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{padding:5px 8px;font-size:11px;white-space:nowrap}
+    .btn-dl{padding:5px 7px;font-size:11px}
     .btn-dl span{display:none}
+    .dl-menu{width:min(272px,calc(100vw - 24px));right:-4px}
     .kpis{display:none}
 
     .layout{
@@ -360,7 +392,7 @@
     .mapa-wrap{min-height:0}
     .bases{left:8px;top:8px}
     .bases button{padding:4px 8px;font-size:11px}
-    .hud{left:8px;bottom:8px}
+    .hud{left:8px;bottom:24px}
     .hud-pill{padding:4px 7px;font-size:10px}
     .btn{padding:5px 8px;font-size:10.5px}
 
@@ -396,8 +428,8 @@
       </svg>
     </div>
     <div>
-      <h1>Red Vial — Corredor Norte</h1>
-      <p>Lima → Trujillo → Chiclayo → Piura → Sullana / Chulucanas</p>
+      <h1>Red vial del ámbito</h1>
+      <p>Corredor norte + Carretera Central a Huancayo + ramal Piura–Paita</p>
     </div>
   </div>
 
@@ -412,14 +444,35 @@
 
   <div class="kpis">
     <div class="kpi"><b id="k-tramos">—</b><span>Tramos</span></div>
-    <div class="kpi"><b id="k-km">—</b><span>Km</span></div>
+    <div class="kpi"><b id="k-km">—</b><span>Km de red</span></div>
+    <div class="kpi"><b id="k-ciudades">—</b><span>Ciudades</span></div>
     <div class="kpi"><b id="k-dist">—</b><span>Distrib.</span></div>
     <div class="kpi"><b id="k-alt">—</b><span>Con desvío</span></div>
   </div>
-  <button class="btn-dl" id="btn-dl" title="Descargar red vial como GeoJSON">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    <span>GeoJSON</span>
-  </button>
+
+  <div class="dl-wrap">
+    <button class="btn-dl" id="btn-dl" aria-haspopup="true" aria-expanded="false" title="Descargar la red como GeoJSON">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span id="dl-label">GeoJSON</span>
+      <svg class="caret" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="dl-menu" id="dl-menu" role="menu">
+      <button data-dl="red" role="menuitem">
+        <b>Red vial completa</b><span id="dl-sub-red">—</span>
+      </button>
+      <button data-dl="visibles" role="menuitem">
+        <b>Solo lo filtrado</b><span id="dl-sub-vis">aplica jerarquía, zona, desvío y peaje</span>
+      </button>
+      <div class="sep"></div>
+      <button data-dl="nodos" role="menuitem">
+        <b>Ciudades y distribuidores</b><span id="dl-sub-nod">puntos logísticos</span>
+      </button>
+      <button data-dl="macro" role="menuitem">
+        <b>Tramos completos</b><span id="dl-sub-macro">rutas macro con su secuencia</span>
+      </button>
+      <div class="foot">Coordenadas WGS84 (CRS84), simplificadas a 3 m. La versión sin simplificar está en <code>data/processed/red_vial/red_vial.geojson</code>.</div>
+    </div>
+  </div>
 </header>
 
 <main class="layout" id="vista-mapa">
@@ -464,7 +517,7 @@
     </div>
 
     <div class="card">
-      <div class="card-h"><h2>Tramos completos</h2></div>
+      <div class="card-h"><h2>Tramos completos</h2><span id="cnt-macro" style="font-size:10.5px;color:var(--muted-fg)"></span></div>
       <div class="card-b tight" id="macro" style="display:flex;flex-direction:column;gap:5px"></div>
     </div>
 
@@ -649,17 +702,17 @@
     </div>
 
     <div class="seccion">
-      <h2>4 · Prueba de uso: el simulador recorre la red</h2>
+      <h2>4 · Coherencia de las rutas completas</h2>
       <table>
-        <thead><tr><th>Prueba</th><th>Resultado</th></tr></thead>
-        <tbody>
-          <tr><td>Lima → Trujillo con la política «continuar»</td><td>553.6 km en ≈ 7.5 h de conducción</td></tr>
-          <tr><td>Lima → Piura (corredor completo)</td><td>1 004 km dentro del horizonte de 60 h</td></tr>
-          <tr><td>Descanso de jornada</td><td>45 min exactos cada 5 h</td></tr>
-          <tr><td>Distancia contabilizada</td><td>exacta (el remanente del paso se arrastra como crédito)</td></tr>
-          <tr><td>Acción «tomar alterna»</td><td>desvío real: 1 004 → 1 216 km</td></tr>
-        </tbody>
+        <thead><tr><th>Ruta</th><th class="num">Recorrido por la red</th><th class="num">Vel. media</th></tr></thead>
+        <tbody id="tabla-uso"></tbody>
       </table>
+      <p style="font-size:12px;color:var(--muted-fg);margin-top:8px">
+        Cada ruta se obtiene con el camino más corto por distancia sobre la topología, no con un
+        motor externo. El simulador recorre estas mismas rutas sin atascos: las cuatro acciones
+        (continuar, alterna, esperar, replanificar) producen efectos distintos y medibles, y
+        «tomar alterna» añade ≈ 2 % de kilómetros.
+      </p>
     </div>
 
     <div class="nota">
@@ -717,6 +770,7 @@
   const nf = n => n.toLocaleString('es-PE');
   document.getElementById('k-tramos').textContent = nf(D.meta.n_tramos);
   document.getElementById('k-km').textContent = nf(Math.round(D.meta.km));
+  document.getElementById('k-ciudades').textContent = D.meta.n_ciudades || D.ciudades.length;
   document.getElementById('k-dist').textContent = D.meta.n_distribuidores;
   const pctAlt = D.meta.validacion?.metricas?.tramos_con_alterna_pct ?? 0;
   document.getElementById('k-alt').textContent = pctAlt.toFixed(1) + ' %';
@@ -835,14 +889,17 @@
   document.head.appendChild(estiloTT);
 
   /* ---------- ciudades ---------- */
-  const DIR_CIUDAD = {LIM:'right', TRU:'right', CHI:'right', PIU:'left', SUL:'top', CHU:'right'};
+  const DIR_CIUDAD = {LIM:'right', TRU:'right', CHI:'right', PIU:'left', SUL:'top', CHU:'right', HUY:'left', PAI:'left'};
+  const esExtension = c => c.rol === 'zona_extension';
   D.ciudades.forEach(function(c){
     L.circleMarker([c.lat, c.lon], {
-      radius:4.5, color:'#18181b', weight:2, fillColor:'#ffffff', fillOpacity:1
+      radius:4.5, color:esExtension(c)?'#a1a1aa':'#18181b', weight:2,
+      fillColor:'#ffffff', fillOpacity:1, dashArray:esExtension(c)?'2 2':null
     })
       .bindTooltip(c.nombre, {permanent:true, direction:DIR_CIUDAD[c.id_ciudad]||'right', offset:[7,0], className:'etiqueta-ciudad', opacity:1})
-      .bindPopup('<b>'+c.nombre+'</b><br>'+(c.distribuidores||0)+' distribuidores<br>'+
-                 'Snap a la red: '+c.distancia_snap_m+' m', {className:'tt'})
+      .bindPopup('<b>'+c.nombre+'</b><br>'+
+                 (esExtension(c) ? 'Zona de extensión (sin distribuidores)' : (c.distribuidores||0)+' distribuidores')+
+                 '<br>Snap a la red: '+c.distancia_snap_m+' m', {className:'tt'})
       .addTo(capaCiudades);
   });
 
@@ -859,18 +916,44 @@
 
   /* ---------- macro tramos ---------- */
   const macroBox = document.getElementById('macro');
-  D.macro.forEach(function(m){
-    const el = document.createElement('div');
-    el.className = 'macro-item';
-    const tipoEs = NOMBRE_ES[m.tipo] || m.tipo;
-    const tipoDesc = DESC_TIPO[m.tipo] || '';
-    el.innerHTML = '<div class="r"><span>'+m.origen+' → '+m.destino+'</span>'+
-                   '<span style="color:#71717a;font-weight:500">'+m.km.toFixed(1)+' km</span></div>'+
-                   '<div class="s">'+m.n+' tramos · '+(m.min/60).toFixed(1)+' h · '+tipoEs+'</div>'+
-                   (tipoDesc?'<span class="tip">'+tipoDesc+'</span>':'');
-    el.addEventListener('click', function(){ verMacro(m); });
-    macroBox.appendChild(el);
+  const GRUPOS_MACRO = [
+    {k:'corredor',  t:'Corredor norte',      sub:'Lima → Sullana / Chulucanas'},
+    {k:'extension', t:'Zonas de extensión',  sub:'Carretera Central y ramal a Paita'}
+  ];
+
+  function tituloGrupo(txt, sub){
+    const d = document.createElement('div');
+    d.style.cssText = 'font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;'+
+                      'color:#71717a;padding:6px 6px 1px';
+    d.innerHTML = txt + '<span style="display:block;font-weight:400;letter-spacing:0;'+
+                        'text-transform:none;font-size:10px;color:#a1a1aa">'+sub+'</span>';
+    return d;
+  }
+
+  GRUPOS_MACRO.forEach(function(g){
+    const items = D.macro.filter(function(m){ return (m.alcance || 'corredor') === g.k; });
+    if (!items.length) return;
+    macroBox.appendChild(tituloGrupo(g.t, g.sub));
+    items.forEach(function(m){
+      const el = document.createElement('div');
+      el.className = 'macro-item';
+      const tipoEs = NOMBRE_ES[m.tipo] || m.tipo;
+      const tipoDesc = DESC_TIPO[m.tipo] || '';
+      el.innerHTML = '<div class="r"><span>'+m.origen+' → '+m.destino+'</span>'+
+                     '<span style="color:#71717a;font-weight:500">'+m.km.toFixed(1)+' km</span></div>'+
+                     '<div class="s">'+m.n+' tramos · '+(m.min/60).toFixed(1)+' h · '+tipoEs+'</div>'+
+                     (tipoDesc?'<span class="tip">'+tipoDesc+'</span>':'');
+      el.addEventListener('click', function(){ verMacro(m); });
+      macroBox.appendChild(el);
+    });
+    const tot = items.reduce(function(a,m){ return a + m.km; }, 0);
+    const pie = document.createElement('div');
+    pie.style.cssText = 'font-size:10.5px;color:#71717a;padding:1px 6px 4px;font-variant-numeric:tabular-nums';
+    pie.textContent = 'Subtotal ' + tot.toFixed(1) + ' km';
+    macroBox.appendChild(pie);
   });
+  const cntMacro = document.getElementById('cnt-macro');
+  if (cntMacro) cntMacro.textContent = D.macro.length + ' rutas';
 
   let capaMacroActiva = null;
   function verMacro(m){
@@ -951,12 +1034,15 @@
     if (timerFiltro) clearTimeout(timerFiltro);
     timerFiltro = setTimeout(_aplicar, 40);
   }
+  function pasaFiltro(t){
+    return estado.tipos.has(TIPOS[t.t]) && estado.zonas.has(ZONAS[t.z]) &&
+           (!estado.soloAlt || !!t.a) && (!estado.soloPeaje || !!t.p);
+  }
   function _aplicar(){
     let vis = 0;
     for (let i=0;i<TR.length;i++){
       const t = TR[i];
-      const ok = estado.tipos.has(TIPOS[t.t]) && estado.zonas.has(ZONAS[t.z]) &&
-                 (!estado.soloAlt || t.a) && (!estado.soloPeaje || t.p);
+      const ok = pasaFiltro(t);
       const p = pl[i];
       const dentro = mapa.hasLayer(p);
       if (ok && !dentro) mapa.addLayer(p);
@@ -1095,7 +1181,9 @@
       '<div class="det-head">'+
         '<div class="det-id">'+m.origen+' → '+m.destino+'</div>'+
         '<div class="det-sub">Tramo completo · '+m.n+' tramos de la topología</div>'+
-        '<div class="badges">'+badgeTipo(m.tipo, NOMBRE_ES[m.tipo] || m.tipo)+'<span class="badge ok">Ruta verificada</span></div>'+
+        '<div class="badges">'+badgeTipo(m.tipo, NOMBRE_ES[m.tipo] || m.tipo)+
+          (m.alcance==='extension'?'<span class="badge neutral">Extensión</span>':'')+
+          '<span class="badge ok">Ruta verificada</span></div>'+
       '</div>'+
       '<div class="grid2">'+
         '<div class="celda"><span>Distancia</span><b>'+m.km.toFixed(1)+'<small>km</small></b></div>'+
@@ -1116,8 +1204,10 @@
   D.ciudades.forEach(function(c){
     const b = document.createElement('button');
     b.className = 'fila';
-    b.innerHTML = '<span class="dot"></span><span class="nom">'+c.nombre+'</span>'+
-                  '<span class="sub">'+(c.distribuidores||0)+' dist.</span>';
+    const ext = c.rol === 'zona_extension';
+    b.innerHTML = '<span class="dot" style="background:'+(ext?'#a1a1aa':'#2563eb')+'"></span>'+
+                  '<span class="nom">'+c.nombre+'</span>'+
+                  '<span class="sub">'+(ext?'extensión':(c.distribuidores||0)+' dist.')+'</span>';
     b.addEventListener('click', function(){
       mapa.flyTo([c.lat, c.lon], 11, {duration:.8});
     });
@@ -1222,6 +1312,21 @@
     tbChk.appendChild(tr);
   });
 
+  /* ---------- tabla de rutas completas (se calcula con los macro-tramos) ---- */
+  const tbUso = document.getElementById('tabla-uso');
+  if (tbUso){
+    D.macro.forEach(function(m){
+      const tr = document.createElement('tr');
+      const vel = m.min > 0 ? (m.km / (m.min / 60)) : 0;
+      const etiqueta = m.alcance === 'extension'
+        ? ' <span style="font-size:10px;color:#a1a1aa">· extensión</span>' : '';
+      tr.innerHTML = '<td>'+m.origen+' → '+m.destino+etiqueta+'</td>'+
+                     '<td class="num">'+m.km.toFixed(1)+' km · '+(m.min/60).toFixed(1)+' h</td>'+
+                     '<td class="num">'+vel.toFixed(1)+' km/h</td>';
+      tbUso.appendChild(tr);
+    });
+  }
+
 
 
   /* ---------- arranque ---------- */
@@ -1252,43 +1357,194 @@
   }, 200);
 
   /* ---------- descarga GeoJSON ---------- */
-  document.getElementById('btn-dl').addEventListener('click', function(){
-    const feats = TR.map(function(tr){
-      const coords = [];
-      for (let k = 0; k < tr.c.length; k += 2){
-        coords.push([tr.c[k], tr.c[k+1]]);
-      }
-      return {
-        type: "Feature",
-        properties: {
-          id_tramo: tr.i,
-          tipo_via: TIPOS[tr.t],
-          distancia_km: tr.d,
-          tiempo_flujo_min: tr.m,
-          peaje: tr.p === 1,
-          tiene_alterna: tr.a === 1,
-          zona: ZONAS[tr.z],
-          nombre_via: tr.n >= 0 ? NOMBRES[tr.n] : null
-        },
-        geometry: {type: "LineString", coordinates: coords}
-      };
-    });
-    const geo = {
-      type: "FeatureCollection",
-      name: "red_vial_corredor_norte",
-      crs: {type: "name", properties: {name: "urn:ogc:def:crs:OGC:1.3:CRS84"}},
-      features: feats
+  const btnDl = document.getElementById('btn-dl');
+  const dlMenu = document.getElementById('dl-menu');
+  const dlLabel = document.getElementById('dl-label');
+  const CRS = {type:"name", properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}};
+
+  function toast(msg, ms){
+    let t = document.getElementById('toast');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'toast'; t.className = 'toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._h);
+    t._h = setTimeout(function(){ t.classList.remove('on'); }, ms || 3200);
+  }
+
+  function coordsDe(tr){
+    const c = [];
+    for (let k = 0; k < tr.c.length; k += 2) c.push([tr.c[k], tr.c[k+1]]);
+    return c;
+  }
+
+  function propsTramo(tr){
+    return {
+      id_tramo: tr.i,
+      tipo_via: TIPOS[tr.t],
+      distancia_km: tr.d,
+      tiempo_flujo_min: tr.m,
+      velocidad_kmh: tr.m > 0 ? Math.round(tr.d / (tr.m / 60) * 10) / 10 : null,
+      peaje: tr.p === 1,
+      tiene_alterna: tr.a === 1,
+      zona: ZONAS[tr.z],
+      nombre_via: tr.n >= 0 ? NOMBRES[tr.n] : null
     };
-    const blob = new Blob([JSON.stringify(geo, null, 2)], {type: "application/geo+json"});
+  }
+
+  function coleccion(nombre, feats, extra){
+    const geo = {type:"FeatureCollection", name:nombre, crs:CRS, features:feats};
+    if (extra) Object.assign(geo, extra);
+    return geo;
+  }
+
+  function guardar(nombreArchivo, geo, conSalto){
+    const txt = JSON.stringify(geo, null, conSalto ? 2 : 0);
+    const blob = new Blob([txt], {type:"application/geo+json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "red_vial_corredor_norte.geojson";
+    a.download = nombreArchivo;
+    a.rel = "noopener";
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // El ancla y el blob se liberan con retraso: si se quitan en el mismo tick
+    // del clic, Chrome aborta la escritura y la descarga queda en 0 KB.
+    setTimeout(function(){ a.remove(); }, 2000);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    return (blob.size / 1048576).toFixed(1);
+  }
+
+  const EXPORTADORES = {
+    red: function(){
+      const feats = TR.map(function(tr){
+        return {type:"Feature", properties:propsTramo(tr),
+                geometry:{type:"LineString", coordinates:coordsDe(tr)}};
+      });
+      return {
+        archivo: "red_vial_ambito_completo.geojson",
+        geo: coleccion("red_vial_ambito_completo", feats, {
+          alcance: "Corredor norte + Carretera Central a Huancayo + ramal Piura-Paita",
+          fuente: D.meta.fuente,
+          n_tramos: feats.length,
+          km_totales: D.meta.km,
+          generado_por: "dashboard red vial — topología OSM consolidada"
+        }),
+        resumen: feats.length + " tramos"
+      };
+    },
+    visibles: function(){
+      const feats = [];
+      for (let i = 0; i < TR.length; i++){
+        if (!pasaFiltro(TR[i])) continue;
+        feats.push({type:"Feature", properties:propsTramo(TR[i]),
+                    geometry:{type:"LineString", coordinates:coordsDe(TR[i])}});
+      }
+      return {
+        archivo: "red_vial_filtrada.geojson",
+        geo: coleccion("red_vial_filtrada", feats, {
+          filtros: {
+            jerarquia: TIPOS.filter(function(t){ return estado.tipos.has(t); }),
+            zonas: ZONAS.filter(function(z){ return estado.zonas.has(z); }),
+            solo_con_desvio: estado.soloAlt,
+            solo_con_peaje: estado.soloPeaje
+          },
+          n_tramos: feats.length
+        }),
+        resumen: feats.length + " tramos"
+      };
+    },
+    nodos: function(){
+      const feats = [];
+      D.ciudades.forEach(function(c){
+        feats.push({type:"Feature",
+          properties:{tipo:"ciudad", id:c.id_ciudad, nombre:c.nombre, rol:c.rol,
+                      distribuidores:c.distribuidores||0, distancia_snap_m:c.distancia_snap_m},
+          geometry:{type:"Point", coordinates:[c.lon, c.lat]}});
+      });
+      D.distribuidores.forEach(function(d){
+        feats.push({type:"Feature",
+          properties:{tipo:"distribuidor", id:d.id_distribuidor, ciudad:d.ciudad,
+                      distancia_hub_km:D.meta.distancias_hub[d.id_distribuidor] ?? null},
+          geometry:{type:"Point", coordinates:[d.lon, d.lat]}});
+      });
+      return {
+        archivo: "nodos_logisticos.geojson",
+        geo: coleccion("nodos_logisticos", feats),
+        resumen: feats.length + " puntos"
+      };
+    },
+    macro: function(){
+      const feats = D.macro.map(function(m){
+        const pts = [];
+        m.sec.forEach(function(i){
+          const c = TR[i].c;
+          for (let k = 0; k < c.length; k += 2) pts.push([c[k], c[k+1]]);
+        });
+        return {type:"Feature",
+          properties:{id_macro:m.id, origen:m.origen, destino:m.destino,
+                      alcance:m.alcance || "corredor", distancia_km:m.km,
+                      tiempo_min:m.min, n_tramos:m.n, tipo_via_dominante:m.tipo,
+                      tramos:m.sec.map(function(i){ return TR[i].i; })},
+          geometry:{type:"LineString", coordinates:pts}};
+      });
+      return {
+        archivo: "tramos_completos.geojson",
+        geo: coleccion("tramos_completos", feats),
+        resumen: feats.length + " rutas"
+      };
+    }
+  };
+
+  function descargar(clave){
+    const fn = EXPORTADORES[clave];
+    if (!fn) return;
+    btnDl.disabled = true;
+    dlLabel.textContent = "Generando…";
+    // Se cede un frame para que el navegador pinte el estado antes de serializar.
+    setTimeout(function(){
+      try {
+        const r = fn();
+        const mb = guardar(r.archivo, r.geo, r.geo.features.length <= 2000);
+        toast(r.resumen + " · " + mb + " MB · " + r.archivo);
+      } catch (err) {
+        toast("No se pudo generar el archivo: " + err.message, 5000);
+      } finally {
+        btnDl.disabled = false;
+        dlLabel.textContent = "GeoJSON";
+        cerrarMenu();
+      }
+    }, 40);
+  }
+
+  function abrirMenu(){
+    dlMenu.classList.add('on');
+    btnDl.setAttribute('aria-expanded', 'true');
+  }
+  function cerrarMenu(){
+    dlMenu.classList.remove('on');
+    btnDl.setAttribute('aria-expanded', 'false');
+  }
+  btnDl.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (dlMenu.classList.contains('on')) cerrarMenu(); else abrirMenu();
   });
+  dlMenu.addEventListener('click', function(e){
+    const b = e.target.closest('button[data-dl]');
+    if (!b) return;
+    e.stopPropagation();
+    descargar(b.dataset.dl);
+  });
+  document.addEventListener('click', function(){ cerrarMenu(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') cerrarMenu(); });
+
+  setTxt('dl-sub-red', nf(TR.length) + ' tramos · ' + nf(Math.round(D.meta.km)) + ' km');
+  setTxt('dl-sub-nod', D.ciudades.length + ' ciudades · ' + D.distribuidores.length + ' distribuidores');
+  setTxt('dl-sub-macro', D.macro.length + ' rutas macro');
 })();
 </script>
 </body>

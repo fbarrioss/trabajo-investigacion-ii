@@ -183,18 +183,22 @@ def main() -> int:
     for ciudad, n in distribuidores.groupby("ciudad").size().items():
         print(f"    {ciudad:<14} {n:>2}")
 
-    print("\n  Tramos completos del corredor (macro-tramos):")
-    for m in macro.itertuples(index=False):
+    print("\n  Tramos completos (macro-tramos):")
+    for alcance, titulo in (("corredor", "Corredor"), ("extension", "Extensiones")):
+        bloque = macro[macro["alcance"] == alcance] if "alcance" in macro.columns else macro
+        if bloque.empty:
+            continue
+        print(f"    [{titulo}]")
+        for m in bloque.itertuples(index=False):
+            print(
+                f"      {m.origen:<12} → {m.destino:<12} "
+                f"{m.distancia_km:>7.1f} km  {m.tiempo_min/60:>5.1f} h  "
+                f"{m.n_tramos:>4} tramos"
+            )
         print(
-            f"    {m.origen:<12} → {m.destino:<12} "
-            f"{m.distancia_km:>7.1f} km  {m.tiempo_min/60:>5.1f} h  "
-            f"{m.n_tramos:>4} tramos"
-        )
-    if not macro.empty:
-        print(
-            f"    {'TOTAL':<12}   {'':<12} "
-            f"{macro.distancia_km.sum():>7.1f} km  "
-            f"{macro.tiempo_min.sum()/60:>5.1f} h"
+            f"      {'SUBTOTAL':<12}   {'':<12} "
+            f"{bloque.distancia_km.sum():>7.1f} km  "
+            f"{bloque.tiempo_min.sum()/60:>5.1f} h"
         )
 
     print(f"\n  Distancia por red desde {hub_id} (km):")

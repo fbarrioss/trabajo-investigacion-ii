@@ -218,7 +218,7 @@ el comportamiento esperado de una política que nunca avanza.
 
 ## 6. Dashboard de la red
 
-`dashboard/index.html` es un visor autocontenido (5.1 MB, sin servidor) con los
+`dashboard/index.html` es un visor autocontenido (5.15 MB, sin servidor) con los
 28 312 tramos embebidos. Se regenera con:
 
 ```bash
@@ -227,8 +227,22 @@ python dashboard/build_dashboard.py
 
 Incluye mapa con jerarquía vial por color, búsqueda por ID o nombre de vía,
 filtros por zona y por disponibilidad de desvío, ficha técnica de cada tramo,
-trazado de los 5 tramos completos y dos pestañas con la metodología y la
-validación. Acepta enlaces directos: `index.html#TR-03909`, `#metodo`, `#valida`.
+trazado de los 7 tramos completos (5 del corredor + 2 de las zonas de extensión)
+y dos pestañas con la metodología y la validación. Acepta enlaces directos:
+`index.html#TR-03909`, `#metodo`, `#valida`.
+
+El botón **GeoJSON** descarga cuatro capas distintas, según lo que se necesite:
+
+| Capa | Archivo | Contenido |
+|---|---|---|
+| Red vial completa | `red_vial_ambito_completo.geojson` | 28 312 tramos con todos sus atributos |
+| Solo lo filtrado | `red_vial_filtrada.geojson` | los tramos visibles con los filtros activos (incluye los filtros aplicados en el archivo) |
+| Ciudades y distribuidores | `nodos_logisticos.geojson` | 8 ciudades + 17 distribuidores como puntos |
+| Tramos completos | `tramos_completos.geojson` | las 7 rutas macro con su secuencia de tramos |
+
+Las coordenadas van en WGS84 (CRS84) simplificadas a 3 m para que el archivo
+baje de ~40 MB a ~10 MB; la versión sin simplificar queda en
+`data/processed/red_vial/red_vial.geojson`.
 
 ## 7. Reproducibilidad
 

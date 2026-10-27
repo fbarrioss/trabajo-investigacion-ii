@@ -79,6 +79,18 @@ class Escenario:
         ids = [c["id"] for c in self.ciudades]
         return list(zip(ids[:-1], ids[1:]))
 
+    @property
+    def extensiones(self) -> list[tuple[str, str]]:
+        """Pares (origen, destino) de las zonas de extensión.
+
+        Se mantienen fuera de ``conexiones`` para que el total del corredor
+        declarado en la tesis (Lima → Chulucanas) no cambie al ampliar la red.
+        """
+        return [
+            (c["origen"], c["destino"])
+            for c in self.crudo.get("extensiones", [])
+        ]
+
     def ciudad(self, cid: str) -> dict[str, Any]:
         for c in self.ciudades:
             if c["id"] == cid:
