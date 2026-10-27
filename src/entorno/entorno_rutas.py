@@ -4,7 +4,7 @@ Implementa un Dec-POMDP cooperativo con entrenamiento centralizado y ejecución
 descentralizada (CTDE):
 
     * Agentes      : unidades vehiculares (1 agente = 1 vehículo en tránsito).
-    * Observación  : vector local normalizado por agente (18 dimensiones).
+    * Observación  : vector local normalizado por agente (20 dimensiones).
     * Estado global: concatenación de observaciones + variables del sistema.
     * Acciones     : 4 (continuar, tomar alterna, esperar, replanificar).
     * Recompensa   : función compartida (cooperativa) según Tabla 3 del plan.
