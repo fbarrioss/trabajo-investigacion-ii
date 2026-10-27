@@ -171,7 +171,8 @@ def mapa_red(
 
     ax.autoscale_view()
     ax.set_title(
-        "Red vial del corredor Lima – Chulucanas (topología consolidada)",
+        "Red vial del ámbito (topología consolidada)\n"
+        "Corredor norte + Carretera Central a Huancayo + ramal Piura–Paita",
         fontsize=13, fontweight="bold", pad=14,
     )
     ax.set_xlabel("Longitud")
