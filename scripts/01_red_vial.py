@@ -166,7 +166,7 @@ def main() -> int:
 
     # --- Reporte -------------------------------------------------------------
     print("\n" + "=" * 62)
-    print("  RED VIAL — CORREDOR LIMA – CHULUCANAS")
+    print("  RED VIAL — CORREDOR NORTE + COBERTURA EXTENDIDA")
     print("=" * 62)
     r = topo.resumen()
     print(f"  Fuente           : {topo.metadatos.get('fuente')}")

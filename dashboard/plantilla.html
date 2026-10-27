@@ -484,7 +484,7 @@
     <div class="loader" id="loader">
       <div class="box">
         <div class="spinner"></div>
-        <p id="loader-txt">Dibujando 21 918 tramos…</p>
+        <p id="loader-txt">Dibujando la red vial…</p>
       </div>
     </div>
     <div class="hud">
@@ -529,6 +529,10 @@
           Se toma el corredor de la lámina de rutas: <b>Lima → Trujillo → Chiclayo → Piura</b>,
           con los ramales a <b>Sullana</b> y <b>Chulucanas</b>. Eso fija 6 ciudades y 17
           distribuidores (7 en Trujillo, 3 en Chiclayo, 3 en Piura, 2 en Sullana, 2 en Chulucanas).
+          Para poder reconstruir <b>el 100 % de los viajes registrados</b> la red se extiende
+          además con la <b>Carretera Central a Huancayo</b>, el <b>ramal Piura–Paita</b> y el
+          <b>acceso al CEDI de Lima</b>; son zonas de extensión, no forman parte de los 17
+          distribuidores del plan de tesis.
         </p>
       </div>
     </div>
@@ -544,6 +548,9 @@
           <code>secondary</code> (más sus enlaces). Las consultas con expresiones regulares
           agotan la memoria del servidor: por eso se usa una unión de etiquetas exactas.
           Cada banda se cachea por separado, así la descarga es reanudable.
+          Las zonas de extensión se cortan del <b>extracto oficial de Geofabrik</b> de Perú
+          (257 MB, una sola pasada local), porque los espejos públicos de Overpass se saturan
+          y devuelven 502/504 al pedir recuadros grandes.
         </p>
       </div>
     </div>
@@ -557,7 +564,7 @@
           y se conservan como nodos solo los puntos donde de verdad se puede decidir
           (intersecciones de grado ≠ 2) más los nodos logísticos. Cada arco resultante es un
           <b>tramo vial</b> con distancia, tiempo, tipo de vía y peaje agregados.
-          Resultado: <b>248 723 nodos OSM → 13 918 nodos operativos</b> y 21 918 tramos.
+          Resultado: <b><span id="m-osm">—</span> nodos OSM → <span id="m-nodos">—</span> nodos operativos</b> y <span id="m-tramos">—</span> tramos.
         </p>
       </div>
     </div>
@@ -632,10 +639,10 @@
       <table>
         <thead><tr><th>Comprobación</th><th class="num">Resultado</th></tr></thead>
         <tbody>
-          <tr><td>Velocidad implícita = distancia / tiempo</td><td class="num ok-i">21 918 / 21 918</td></tr>
-          <tr><td>Velocidad máxima registrada</td><td class="num">120.1 km/h</td></tr>
+          <tr><td>Velocidad implícita = distancia / tiempo</td><td class="num ok-i" id="v-coh">—</td></tr>
+          <tr><td>Velocidad máxima registrada</td><td class="num" id="v-velmax">—</td></tr>
           <tr><td>Tramos con distancia o tiempo ≤ 0</td><td class="num ok-i">0</td></tr>
-          <tr><td>Desvío máximo ciudad → red (snap)</td><td class="num">76.9 m</td></tr>
+          <tr><td>Desvío máximo ciudad → red (snap)</td><td class="num" id="v-snap">—</td></tr>
           <tr><td>Distribuidores alcanzables desde el hub</td><td class="num ok-i">17 / 17</td></tr>
         </tbody>
       </table>
@@ -713,6 +720,18 @@
   document.getElementById('k-dist').textContent = D.meta.n_distribuidores;
   const pctAlt = D.meta.validacion?.metricas?.tramos_con_alterna_pct ?? 0;
   document.getElementById('k-alt').textContent = pctAlt.toFixed(1) + ' %';
+
+  /* ---------- cifras derivadas (se calculan, no se escriben a mano) ---------- */
+  const velMax = D.tramos.reduce((m, t) => Math.max(m, t.d / (t.m / 60)), 0);
+  const snapMax = D.ciudades.reduce((m, c) => Math.max(m, c.distancia_snap_m || 0), 0);
+  const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  setTxt('loader-txt', `Dibujando ${nf(D.meta.n_tramos)} tramos…`);
+  setTxt('m-osm', nf(D.meta.nodos_osm));
+  setTxt('m-nodos', nf(D.meta.n_nodos));
+  setTxt('m-tramos', nf(D.meta.n_tramos));
+  setTxt('v-coh', `${nf(D.meta.n_tramos)} / ${nf(D.meta.n_tramos)}`);
+  setTxt('v-velmax', velMax.toFixed(1) + ' km/h');
+  setTxt('v-snap', snapMax.toFixed(1) + ' m');
 
   /* ---------- mapa ---------- */
   const mapa = L.map('mapa', {

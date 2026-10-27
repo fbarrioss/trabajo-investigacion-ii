@@ -36,7 +36,7 @@ el mezclador de QMIX observa el estado global durante el entrenamiento.
 | Código | Acción | Semántica operativa | Efecto |
 |---|---|---|---|
 | 0 | `continuar` | Seguir el plan vigente | Toma la arista del plan **sin recalcular** |
-| 1 | `tomar_alterna` | Rodear el tramo planificado | Recalcula el camino penalizando el tramo siguiente (×1000), de modo que el vehículo toma un **desvío real**. Solo es válida si el tramo tiene `tiene_alterna` (94.9 % de la red) |
+| 1 | `tomar_alterna` | Rodear el tramo planificado | Recalcula el camino penalizando el tramo siguiente (×1000), de modo que el vehículo toma un **desvío real**. Solo es válida si el tramo tiene `tiene_alterna` (95.4 % de la red) |
 | 2 | `esperar` | Detenerse un paso (15 min) | Costo de detención S/ 64/h |
 | 3 | `replanificar` | Recalcular ruta con el estado actual | Dijkstra ponderado por eventos |
 

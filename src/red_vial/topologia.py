@@ -253,6 +253,12 @@ def consolidar_tramos(
             # entre sí (con 2 decimales de minuto los tramos de pocos metros
             # quedaban en 0.00 min y la velocidad resultaba absurda).
             dist_km = round(largo_m / 1000.0, 3)
+            # OSM tiene pares de nodos distintos separados por centímetros
+            # (duplicados de digitalización en avenidas de dos calzadas). Al
+            # redondear a metros quedan tramos de 0 km, que no aportan nada a la
+            # topología y rompen la validación de coherencia.
+            if dist_km <= 0.0:
+                continue
             t_min = round(max(tiempo_s, 0.006) / 60.0, 4)
             vel_kmh = round(dist_km / (t_min / 60.0), 1) if t_min > 0 else 0.0
 
@@ -579,7 +585,7 @@ def construir_topologia(
         tramos=tramos_df,
         grafo=grafo,
         metadatos={
-            "fuente": "OpenStreetMap (Overpass API + OSMnx)",
+            "fuente": "OpenStreetMap (Overpass API + extracto Geofabrik Perú + OSMnx)",
             "escenario": esc.crudo.get("nombre"),
             "nodos_logisticos": len(nodos_logisticos),
             "ciudades": len(ciudades),

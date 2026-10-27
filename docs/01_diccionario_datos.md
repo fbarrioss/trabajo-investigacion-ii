@@ -65,7 +65,7 @@ responden 500/504 por agotamiento de memoria. La unión de igualdades
 | `puente` / `tunel` | bool | Si el tramo contiene un puente o túnel |
 | `bidireccional` | bool | Si se modela en ambos sentidos (por defecto `true`) |
 | `es_alternativa` | bool | Reservado (vía paralela sintética); hoy siempre `false` |
-| `tiene_alterna` | bool | `false` solo si el tramo es **arista de corte**: quitarlo desconecta sus extremos, así que no existe ningún desvío que lo rodee. Habilita la acción «tomar vía alterna» (94.9 % de los tramos) |
+| `tiene_alterna` | bool | `false` solo si el tramo es **arista de corte**: quitarlo desconecta sus extremos, así que no existe ningún desvío que lo rodee. Habilita la acción «tomar vía alterna» (95.4 % de los tramos) |
 | `zona` | string | Ciudad del corredor más cercana al punto medio (`LIM`, `TRU`, …) |
 
 **Regla de consolidación:** se contraen las cadenas de nodos de grado 2 (puntos
@@ -188,7 +188,7 @@ Resultado de `src/red_vial/validar_red.py` sobre la red construida:
 | Valores no positivos (distancia, tiempo, velocidad) | 0 | **0** |
 | Coherencia `distancia / tiempo = velocidad` | 0 desvíos | **0** |
 | Representatividad de escenarios | ≥ 80 % | **6 ciudades / 17 distribuidores** |
-| Snap ciudad → red | ≤ 800 m | **máx. 76.9 m** |
+| Snap ciudad → red | ≤ 800 m | **máx. 227.5 m** |
 | Grafo débilmente conexo | sí | **sí** |
 | Alcanzabilidad hub → distribuidor | 17/17 | **17/17** |
 
@@ -217,19 +217,22 @@ eliminación no desconecta sus extremos):
 
 | Indicador | Valor |
 |---|---|
-| Tramos con desvío disponible | 20 798 / 21 918 (**94.9 %**) |
-| Tramos de corte | 1 120 (5.1 %) |
-| Tramo óptimo Lima → Piura | 985.6 km, 516 tramos |
-| … de los cuales sin alternativa | 26 tramos, 88.6 km (**9.0 %**) |
+| Tramos con desvío disponible | 27 016 / 28 312 (**95.4 %**) |
+| Tramos de corte | 1 296 (4.6 %) |
+| Tramo óptimo Lima → Piura | 978.3 km, 514 tramos |
+| … de los cuales sin alternativa | 27 tramos, 89.0 km (**9.1 %**) |
 
 Los tramos de corte son cruces de río y pasos obligados del corredor; en el 91 %
 restante del recorrido existe un rodeo real.
 
 ### 4.3 Limitaciones declaradas
 
-* **1 838 tramos `trunk` y 442 `motorway`** corresponden a la red de mayor
+* **2 280 tramos `trunk` y 532 `motorway`** corresponden a la red de mayor
   jerarquía; el resto son vías primarias, secundarias y terciarias urbanas.
-* **933 nodos con grado < 2** son fondos de saco en el borde de las bandas de
+* **1 047 nodos con grado < 2** son fondos de saco en el borde de las zonas de
   descarga. No afectan el ruteo entre ciudades.
 * Los **tiempos** son de flujo libre (velocidad legal o `maxspeed` de OSM); la
   congestión se incorpora como evento dinámico en el simulador, no en la red.
+* El atributo **`peaje`** se toma de la etiqueta `toll=yes` de OSM. OSMnx no la
+  conserva por defecto (`useful_tags_way`), por lo que se añade explícitamente
+  al importar `src.red_vial.descargar_osm`.

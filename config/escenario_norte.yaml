@@ -64,6 +64,26 @@ ciudades:
     lon: -80.1625
     rol: ciudad_destino
     distribuidores: 2
+  # --- Zonas de extensión ----------------------------------------------------
+  # No forman parte del corredor de la imagen "rutas.jpeg" ni de los 17
+  # distribuidores del plan de tesis: son los destinos reales de los viajes
+  # registrados por la empresa que quedaban fuera del ámbito original. Se
+  # incluyen para poder reconstruir el 100 % de los 500 viajes (benchmark de la
+  # operación manual) sin alterar el corredor declarado.
+  - id: HUY
+    nombre: Huancayo
+    lat: -12.0681
+    lon: -75.2101
+    rol: zona_extension
+    distribuidores: 0
+    red_urbana: true          # GEO-023/024/025 (Carretera Central)
+  - id: PAI
+    nombre: Paita
+    lat: -5.0892
+    lon: -81.1144
+    rol: zona_extension
+    distribuidores: 0
+    red_urbana: true          # GEO-019 (ramal Piura–Paita)
 
 # --- Conexiones del corredor -------------------------------------------------
 # Orden de la imagen "rutas.jpeg": Lima → Trujillo → Chiclayo → Piura →
@@ -164,6 +184,8 @@ eventos:
     PIU: 1.2
     SUL: 0.9
     CHU: 0.8
+    HUY: 1.3    # Carretera Central: deslizamientos y bloqueos frecuentes
+    PAI: 1.1
 
 # --- Semilla y reproducibilidad ---------------------------------------------
 semilla: 20261016

@@ -79,6 +79,48 @@ RAMAL_CHULUCANAS: list[PuntoCorredor] = [
     PuntoCorredor("CHU", "Chulucanas", -5.0925, -80.1625, "secondary", 65, 1.20),
 ]
 
+# --- Acceso al CEDI de Lima (sur de la metrópoli) ----------------------------
+# El depósito de origen de los 500 viajes registrados está en el cono sur de
+# Lima (−12.2303, −76.9656), 20 km al sureste del centro histórico y fuera del
+# radio urbano que se descargaba antes (9 km). Sin este acceso el depósito
+# quedaba a 12.2 km del nodo más cercano y ningún viaje podía iniciarse sobre
+# la red. Se traza el eje Lima → Panamericana Sur → CEDI.
+ACCESO_DEPOSITO: list[PuntoCorredor] = [
+    PuntoCorredor("LIM", "Lima", -12.0464, -77.0428, "urban", 50, 1.15),
+    PuntoCorredor("SJM", "San Juan de Miraflores", -12.1600, -76.9700, "motorway", 80, 1.10),
+    PuntoCorredor("CEDI", "CEDI Lima (cono sur)", -12.2302778, -76.9655556, "primary", 60, 1.12),
+]
+
+# --- Ramal Piura → Paita (PE-1N oeste) ---------------------------------------
+# El punto GEO-019 (CADENAS 24 HORAS, Paita) está 52 km al oeste de Piura y
+# quedaba 21.3 km fuera de la red. La vía es la PE-1N que sale de Piura por
+# La Unión y La Legua hasta el puerto de Paita.
+RAMAL_PAITA: list[PuntoCorredor] = [
+    PuntoCorredor("PIU", "Piura", -5.1945, -80.6328, "urban", 55, 1.15),
+    PuntoCorredor("LUN", "La Unión", -5.2500, -80.6550, "primary", 80, 1.15),
+    PuntoCorredor("LEG", "La Legua", -5.1300, -80.8700, "primary", 80, 1.12),
+    PuntoCorredor("PAI", "Paita", -5.0892, -81.1144, "primary", 70, 1.12),
+]
+
+# --- Carretera Central Lima → Huancayo (PE-22 / PE-3S) -----------------------
+# Los puntos GEO-023/024/025 (Huancayo) estaban a 175 km de la red porque el
+# corredor norte no incluye la Carretera Central. Esta es la ruta real: sale de
+# Lima por Chosica, sube el valle del Rímac hasta La Oroya (4 800 m) y baja por
+# el valle del Mantaro hasta Jauja, Concepción y Huancayo.
+CORREDOR_CENTRAL: list[PuntoCorredor] = [
+    PuntoCorredor("LIM", "Lima", -12.0464, -77.0428, "urban", 50, 1.15),
+    PuntoCorredor("ATE", "Ate", -12.0333, -76.9167, "primary", 60, 1.15),
+    PuntoCorredor("CHO", "Chosica", -11.9361, -76.6972, "primary", 70, 1.20),
+    PuntoCorredor("SBA", "San Bartolomé", -11.9167, -76.5333, "primary", 65, 1.25),
+    PuntoCorredor("MAT", "Matucana", -11.8500, -76.3833, "primary", 60, 1.28),
+    PuntoCorredor("SMT", "San Mateo", -11.8333, -76.3000, "primary", 55, 1.30),
+    PuntoCorredor("CPL", "Casapalca", -11.6500, -76.2667, "primary", 55, 1.30),
+    PuntoCorredor("ORO", "La Oroya", -11.5167, -75.9000, "primary", 60, 1.25),
+    PuntoCorredor("JAU", "Jauja", -11.7833, -75.5000, "primary", 70, 1.20),
+    PuntoCorredor("CON", "Concepción", -11.9167, -75.3167, "primary", 70, 1.18),
+    PuntoCorredor("HUY", "Huancayo", -12.0681, -75.2101, "urban", 50, 1.15),
+]
+
 # --- Duraciones típicas de entrega urbana ------------------------------------
 RADIO_URBANO_KM: dict[str, float] = {
     "LIM": 12.0,
@@ -87,6 +129,8 @@ RADIO_URBANO_KM: dict[str, float] = {
     "PIU": 5.0,
     "SUL": 3.0,
     "CHU": 2.5,
+    "HUY": 4.0,
+    "PAI": 2.0,
 }
 
 VELOCIDAD_URBANA_KMH: dict[str, float] = {
@@ -96,6 +140,8 @@ VELOCIDAD_URBANA_KMH: dict[str, float] = {
     "PIU": 26.0,
     "SUL": 28.0,
     "CHU": 28.0,
+    "HUY": 24.0,
+    "PAI": 28.0,
 }
 
 

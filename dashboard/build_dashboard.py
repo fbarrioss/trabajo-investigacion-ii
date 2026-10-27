@@ -47,7 +47,7 @@ def main() -> int:
     macro = pd.read_csv(RED / "corredor_macro.csv")
     resumen = json.loads((RED / "resumen.json").read_text(encoding="utf-8"))
 
-    # Índices de atributos categóricos para no repetir cadenas 21 918 veces.
+    # Índices de atributos categóricos para no repetir cadenas 28 312 veces.
     tipos = sorted(tramos["tipo_via"].unique().tolist())
     idx_tipo = {t: i for i, t in enumerate(tipos)}
 
