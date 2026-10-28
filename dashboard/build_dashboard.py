@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -24,10 +25,50 @@ RED = RAIZ / "data" / "processed" / "red_vial"
 BENCH = RAIZ / "data" / "processed" / "benchmark"
 DATASET = RAIZ / "data" / "processed" / "dataset"
 AQUI = Path(__file__).resolve().parent
+DESCARGAS = AQUI / "descargas"
+
+# Artefactos que se publican junto al HTML para poder descargarlos.
+# (nombre, descripción corta) — el nombre debe existir en data/processed/benchmark.
+ARTEFACTOS = [
+    ("benchmark_viajes.csv", "Un registro por viaje: km y minutos por red, km geodésicos y bandera de cobertura"),
+    ("benchmark_paradas.csv", "Un registro por parada: nodo de snap, km acumulados, llegada real y fin de descarga"),
+    ("puntos_snap.csv", "Los puntos de entrega geocodificados y su distancia a la red"),
+    ("benchmark_resumen.json", "Agregados del benchmark que alimentan esta pestaña"),
+    ("cobertura_muestra.json", "Marco muestral: ventana, flota y cobertura sobre el universo de tramos"),
+]
 
 # Simplificación de geometría: 0.00003° ≈ 3.3 m. Invisible a zoom de mapa y
 # reduce los puntos al 38 %.
 TOLERANCIA = 0.00003
+
+
+def _copiar_descargas() -> list[dict]:
+    """Copia los artefactos del benchmark junto al HTML y describe cada uno.
+
+    Dejar los archivos en `dashboard/descargas/` permite que el mismo enlace
+    funcione abriendo el HTML con file:// y sirviéndolo desde Vercel.
+    """
+    DESCARGAS.mkdir(exist_ok=True)
+    items: list[dict] = []
+    for nombre, descripcion in ARTEFACTOS:
+        origen = BENCH / nombre
+        if not origen.exists():
+            continue
+        destino = DESCARGAS / nombre
+        shutil.copy2(origen, destino)
+        filas = 0
+        if destino.suffix == ".csv":
+            with destino.open("r", encoding="utf-8", errors="ignore") as fh:
+                filas = max(sum(1 for _ in fh) - 1, 0)
+        items.append(
+            {
+                "archivo": nombre,
+                "descripcion": descripcion,
+                "kb": round(destino.stat().st_size / 1024, 1),
+                "filas": filas,
+            }
+        )
+    return items
 
 
 def _constantes_entorno() -> dict:
@@ -191,6 +232,7 @@ def main() -> int:
         "acciones": _constantes_entorno(),
         "benchmark": _resumen_benchmark(),
         "cobertura": _cobertura_muestra(),
+        "descargas": _copiar_descargas(),
         "eventos": _calibracion_eventos(int(resumen["n_tramos"])),
         "tramo": {
             "km_medio": round(float(dist.mean()), 3),
@@ -243,6 +285,7 @@ def main() -> int:
     print(f"Dashboard -> {salida}")
     print(f"  tramos embebidos : {len(lista_tramos):,}")
     print(f"  peso del HTML    : {salida.stat().st_size / 1e6:.2f} MB")
+    print(f"  descargas        : {len(datos['modelo']['descargas'])} archivos en {DESCARGAS.name}/")
     return 0
 
 

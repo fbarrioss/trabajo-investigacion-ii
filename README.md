@@ -250,6 +250,23 @@ Las coordenadas van en WGS84 (CRS84) simplificadas a 3 m para que el archivo
 baje de ~40 MB a ~10 MB; la versión sin simplificar queda en
 `data/processed/red_vial/red_vial.geojson`.
 
+## 6.1 Publicar en Vercel
+
+`dashboard/` es un sitio estático: `index.html` más `descargas/`, la carpeta con
+los artefactos del benchmark que se bajan desde la pestaña Modelo.
+
+```bash
+python dashboard/build_dashboard.py   # genera index.html y copia descargas/
+cd dashboard && vercel --prod         # despliega la carpeta como raíz
+```
+
+`vercel.json` fuerza `Content-Disposition: attachment` en `/descargas/*` para que
+los CSV se descarguen en lugar de abrirse en el navegador.
+
+Ojo: `index.html` está en `.gitignore` por peso (5.2 MB). Si conectas el
+repositorio a Vercel en vez de desplegar por CLI, quita esa línea o el build no
+encontrará el HTML.
+
 ## 7. Reproducibilidad
 
 Todas las fuentes de aleatoriedad derivan de `semilla` (config). Los resultados

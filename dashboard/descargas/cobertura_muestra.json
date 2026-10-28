@@ -1,0 +1,89 @@
+{
+  "muestra": {
+    "n_viajes": 500,
+    "n_paradas": 1982,
+    "n_puntos": 25,
+    "n_vehiculos": 9,
+    "fecha_inicio": "2025-12-07 16:32:00",
+    "fecha_fin": "2026-08-18 09:23:00",
+    "dias_con_viajes": 244,
+    "viajes_por_dia_medio": 2.05,
+    "paradas_por_viaje_medio": 3.96,
+    "viajes_por_vehiculo_medio": 55.6
+  },
+  "universo": {
+    "n_tramos": 28312,
+    "km": 14019.6,
+    "tramos_usados": 1687,
+    "pct_tramos_usados": 5.96,
+    "km_usados": 2050.9,
+    "pct_km_usados": 14.63,
+    "tramos_repetidos_media": 163.35,
+    "por_tipo": [
+      {
+        "tipo": "secondary",
+        "total": 9054,
+        "usados": 280,
+        "pct": 3.1
+      },
+      {
+        "tipo": "tertiary",
+        "total": 7165,
+        "usados": 105,
+        "pct": 1.5
+      },
+      {
+        "tipo": "primary",
+        "total": 5878,
+        "usados": 392,
+        "pct": 6.7
+      },
+      {
+        "tipo": "trunk",
+        "total": 2280,
+        "usados": 649,
+        "pct": 28.5
+      },
+      {
+        "tipo": "primary_link",
+        "total": 1063,
+        "usados": 8,
+        "pct": 0.8
+      },
+      {
+        "tipo": "secondary_link",
+        "total": 871,
+        "usados": 5,
+        "pct": 0.6
+      },
+      {
+        "tipo": "trunk_link",
+        "total": 638,
+        "usados": 10,
+        "pct": 1.6
+      },
+      {
+        "tipo": "motorway_link",
+        "total": 562,
+        "usados": 34,
+        "pct": 6.0
+      },
+      {
+        "tipo": "motorway",
+        "total": 532,
+        "usados": 204,
+        "pct": 38.3
+      },
+      {
+        "tipo": "tertiary_link",
+        "total": 269,
+        "usados": 0,
+        "pct": 0.0
+      }
+    ]
+  },
+  "verificacion": {
+    "km_medio_recalculado": 830.8,
+    "km_medio_benchmark": 830.8
+  }
+}

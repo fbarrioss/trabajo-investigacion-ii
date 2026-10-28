@@ -368,6 +368,13 @@
   .estado.pend{background:#fef3c7;color:#b45309}
   .fuente{font-size:10.5px;color:var(--muted-fg);margin-top:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
+  /* ---------- enlaces de descarga ---------- */
+  .descarga{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;font-weight:500}
+  .descarga:hover{text-decoration:underline}
+  .descarga svg{width:13px;height:13px;stroke:currentColor;flex:0 0 auto;opacity:.85}
+  .descarga code{background:var(--accent-soft);border:1px solid #dbeafe;border-radius:4px;padding:1px 5px;font-size:11.5px;color:#1e40af}
+  .filas{display:block;font-size:10px;color:var(--muted-fg);margin-top:2px;font-variant-numeric:tabular-nums}
+
   /* ---------- responsivo ---------- */
   @media (max-width:1180px){
     .layout{grid-template-columns:270px minmax(0,1fr)}
@@ -679,7 +686,7 @@
       </details>
 
       <table>
-        <thead><tr><th>Artefacto</th><th>Qué contiene</th></tr></thead>
+        <thead><tr><th>Artefacto</th><th>Qué contiene</th><th class="num">Tamaño</th></tr></thead>
         <tbody id="m2-tabla"></tbody>
       </table>
 
@@ -1564,16 +1571,18 @@
     tarjeta(nf(Math.round(BEN.duracion_media_min || 0)), 'min de duración media', 'tiempo de flujo libre')
   );
 
-  rellenar('m2-tabla',
-    '<tr><td><code>benchmark_viajes.csv</code></td><td>' + nf(BEN.n_viajes || 0) +
-      ' viajes con km y minutos por red, km geodésicos y bandera de cobertura</td></tr>' +
-    '<tr><td><code>benchmark_paradas.csv</code></td><td>' + nf(BEN.n_paradas || 0) +
-      ' paradas con nodo de snap, llegada real y fin de descarga</td></tr>' +
-    '<tr><td><code>puntos_snap.csv</code></td><td>' + nf(BEN.n_puntos || 0) +
-      ' puntos geocodificados y su distancia a la red (máx ' +
-      (BEN.dist_snap_max_m || 0).toFixed(1) + ' m)</td></tr>' +
-    '<tr><td><code>benchmark_resumen.json</code></td><td>agregados que alimentan esta pestaña</td></tr>'
-  );
+  const DESCARGAS = D.modelo && D.modelo.descargas ? D.modelo.descargas : [];
+  rellenar('m2-tabla', DESCARGAS.map(function(d){
+    return '<tr><td>' +
+      '<a class="descarga" href="descargas/' + d.archivo + '" download="' + d.archivo + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+          '<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+        '<code>' + d.archivo + '</code></a>' +
+      (d.filas ? '<span class="filas">' + nf(d.filas) + ' filas</span>' : '') +
+      '</td><td>' + d.descripcion + '</td>' +
+      '<td class="num">' + (d.kb < 1 ? Math.round(d.kb * 1024) + ' B' : d.kb.toFixed(0) + ' KB') + '</td></tr>';
+  }).join(''));
 
   /* --- 2b · qué tan completa es la muestra --- */
   rellenar('m2-kpis-muestra',

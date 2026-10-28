@@ -1,0 +1,18 @@
+{
+  "n_puntos": 25,
+  "n_puntos_fuera": 0,
+  "n_viajes": 500,
+  "n_viajes_validos": 500,
+  "n_viajes_fuera": 0,
+  "n_viajes_error": 0,
+  "km_red_medio": 830.8,
+  "km_geo_medio": 704.2,
+  "ratio_red_geo": 1.18,
+  "dist_snap_max_m": 1194.5,
+  "origen_nodo": 4601025043,
+  "origen_dist_m": 368,
+  "fuentes": {
+    "viajes": 21,
+    "catalogo": 4
+  }
+}
