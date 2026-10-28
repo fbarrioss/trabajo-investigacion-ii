@@ -228,8 +228,9 @@ python dashboard/build_dashboard.py
 Incluye mapa con jerarquía vial por color, búsqueda por ID o nombre de vía,
 filtros por zona y por disponibilidad de desvío, ficha técnica de cada tramo,
 trazado de los 7 tramos completos (5 del corredor + 2 de las zonas de extensión)
-y dos pestañas con la metodología y la validación. Acepta enlaces directos:
-`index.html#TR-03909`, `#metodo`, `#valida`.
+y tres pestañas de lectura: **Modelo** (los tres requerimientos del asesor con su
+evidencia numérica), **Metodología** y **Validación**. Acepta enlaces directos:
+`index.html#TR-03909`, `#modelo`, `#metodo`, `#valida`.
 
 El botón **GeoJSON** descarga cuatro capas distintas, según lo que se necesite:
 

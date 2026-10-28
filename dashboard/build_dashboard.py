@@ -10,6 +10,7 @@ Uso:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -20,11 +21,83 @@ from shapely.geometry import LineString
 
 RAIZ = Path(__file__).resolve().parents[1]
 RED = RAIZ / "data" / "processed" / "red_vial"
+BENCH = RAIZ / "data" / "processed" / "benchmark"
+DATASET = RAIZ / "data" / "processed" / "dataset"
 AQUI = Path(__file__).resolve().parent
 
 # Simplificación de geometría: 0.00003° ≈ 3.3 m. Invisible a zoom de mapa y
 # reduce los puntos al 38 %.
 TOLERANCIA = 0.00003
+
+
+def _constantes_entorno() -> dict:
+    """Lee DIM_OBS / N_ACCIONES / ACCIONES del propio entorno.
+
+    Se leen del código en lugar de duplicarlos aquí para que la pestaña
+    «Modelo» no quede desactualizada si cambia el espacio de acciones.
+    """
+    fuente = (RAIZ / "src" / "entorno" / "entorno_rutas.py").read_text(encoding="utf-8")
+    dim = int(re.search(r"^DIM_OBS = (\d+)", fuente, re.M).group(1))
+    n = int(re.search(r"^N_ACCIONES = (\d+)", fuente, re.M).group(1))
+    acciones = [
+        {"id": int(i), "clave": c}
+        for i, c in re.findall(r"^    (\d+): \"([a-z_]+)\",", fuente, re.M)
+    ]
+    return {"dim_obs": dim, "n_acciones": n, "acciones": acciones}
+
+
+def _parametros_entorno() -> dict:
+    """Parámetros del entorno desde `config/entrenamiento.yaml`."""
+    try:
+        from src.comun.config import ConfigEntrenamiento
+
+        ent = ConfigEntrenamiento.cargar()["entorno"]
+        return {
+            "dt_min": float(ent["duracion_paso_min"]),
+            "horizonte_pasos": int(ent["horizonte_pasos"]),
+            "n_agentes": int(ent["n_agentes"]),
+            "max_replan": int(ent["max_replanificaciones"]),
+            "descanso_cada_h": float(ent.get("descanso_cada_h", 5.0)),
+            "descanso_min": float(ent.get("descanso_min", 45)),
+        }
+    except Exception as exc:  # pragma: no cover - el dashboard no debe romperse
+        print(f"  [aviso] no se pudo leer la configuración del entorno: {exc}")
+        return {}
+
+
+def _resumen_benchmark() -> dict:
+    """Cifras de la reconstrucción de los 500 viajes reales."""
+    ruta = BENCH / "benchmark_resumen.json"
+    if not ruta.exists():
+        return {}
+    resumen = json.loads(ruta.read_text(encoding="utf-8"))
+    viajes_csv = BENCH / "benchmark_viajes.csv"
+    if viajes_csv.exists():
+        viajes = pd.read_csv(viajes_csv)
+        resumen["duracion_media_min"] = round(float(viajes["min_red"].mean()), 1)
+        resumen["n_paradas"] = int(
+            len(pd.read_csv(BENCH / "benchmark_paradas.csv"))
+            if (BENCH / "benchmark_paradas.csv").exists()
+            else 0
+        )
+    return resumen
+
+
+def _calibracion_eventos(n_tramos: int) -> dict:
+    """Tramos afectados por eventos en el dataset sintético (dato medido)."""
+    ruta = DATASET / "eventos_base.parquet"
+    if not ruta.exists():
+        return {}
+    ev = pd.read_parquet(ruta, columns=["id_tramo", "tipo_evento"])
+    afectados = int(ev["id_tramo"].nunique())
+    por_tipo = ev.groupby("tipo_evento")["id_tramo"].nunique().sort_values(ascending=False)
+    return {
+        "n_eventos": int(len(ev)),
+        "tramos_afectados": afectados,
+        "pct_tramos": round(100.0 * afectados / max(n_tramos, 1), 2),
+        "por_tipo": [{"tipo": str(k), "n": int(v)} for k, v in por_tipo.items()],
+        "objetivo_rutas_pct": 27.6,
+    }
 
 
 def _coords_planas(coords: list[list[float]]) -> list[float]:
@@ -102,6 +175,29 @@ def main() -> int:
     lats = [t["c"][k] for t in lista_tramos for k in range(1, len(t["c"]), 2)]
     bbox = [[min(lats), min(lons)], [max(lats), max(lons)]]
 
+    # --- pestaña «Modelo»: los tres puntos del asesor ------------------------
+    dist = tramos["distancia_km"].astype(float)
+    metricas = resumen.get("validacion", {}).get("metricas", {})
+    modelo = {
+        "entorno": _parametros_entorno(),
+        "acciones": _constantes_entorno(),
+        "benchmark": _resumen_benchmark(),
+        "eventos": _calibracion_eventos(int(resumen["n_tramos"])),
+        "tramo": {
+            "km_medio": round(float(dist.mean()), 3),
+            "km_mediana": round(float(dist.median()), 3),
+            "km_min": round(float(dist.min()), 3),
+            "km_max": round(float(dist.max()), 3),
+            "pct_menor_100m": round(100.0 * float((dist < 0.1).mean()), 1),
+        },
+        "red": {
+            "n_nodos": int(resumen["n_nodos"]),
+            "n_tramos": int(resumen["n_tramos"]),
+            "km": round(float(resumen["km_totales"]), 1),
+            "alterna_pct": float(metricas.get("tramos_con_alterna_pct", 0.0)),
+        },
+    }
+
     datos = {
         "meta": {
             "n_nodos": int(resumen["n_nodos"]),
@@ -126,6 +222,7 @@ def main() -> int:
         "ciudades": ciudades.to_dict(orient="records"),
         "distribuidores": distribuidores.to_dict(orient="records"),
         "macro": macro_json,
+        "modelo": modelo,
     }
 
     plantilla = (AQUI / "plantilla.html").read_text(encoding="utf-8")

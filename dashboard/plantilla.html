@@ -322,6 +322,7 @@
     background:var(--accent-soft);border:1px solid #dbeafe;border-radius:10px;padding:12px 14px;
     font-size:12.5px;color:#1e3a8a;line-height:1.65;margin:18px 0;
   }
+  .nota.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
   table{width:100%;border-collapse:collapse;font-size:12.3px}
   th{
     text-align:left;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
@@ -337,6 +338,35 @@
   .warn-i{color:var(--warn);font-weight:600}
   .seccion{margin-bottom:34px}
   .seccion > h2{font-size:15px;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+
+  /* ---------- pestaña Modelo ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin:12px 0 16px}
+  .kpi-card{border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--card)}
+  .kpi-card b{display:block;font-size:17px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+  .kpi-card span{display:block;font-size:10px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .kpi-card em{display:block;font-size:10.5px;color:var(--muted-fg);font-style:normal;margin-top:4px;line-height:1.4}
+
+  .acciones-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:8px;margin:10px 0 14px}
+  .accion{border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--card)}
+  .accion .id{font-size:10px;color:var(--muted-fg);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+  .accion b{display:block;font-size:12.5px;margin:1px 0 4px}
+  .accion p{margin:0;font-size:11.3px;color:#52525b;line-height:1.5}
+
+  details.obs{border:1px solid var(--border);border-radius:10px;margin:10px 0;background:var(--card)}
+  details.obs summary{cursor:pointer;padding:9px 12px;font-size:12px;font-weight:600;list-style:none;display:flex;align-items:center;gap:7px}
+  details.obs summary::-webkit-details-marker{display:none}
+  details.obs summary .flecha{color:var(--muted-fg);transition:transform .15s;font-size:10px}
+  details.obs[open] summary .flecha{transform:rotate(90deg)}
+  details.obs .cuerpo{padding:0 12px 12px}
+  .obs-lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:3px 16px;margin:0;padding:0;list-style:none}
+  .obs-lista li{display:flex;gap:8px;font-size:11.4px;color:#3f3f46;padding:2px 0;border-bottom:1px solid #f4f4f5}
+  .obs-lista li i{font-style:normal;color:var(--muted-fg);font-variant-numeric:tabular-nums;min-width:32px}
+  .obs-lista li b{font-weight:500;min-width:132px;display:inline-block}
+
+  .estado{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .estado.ok{background:#dcfce7;color:#15803d}
+  .estado.pend{background:#fef3c7;color:#b45309}
+  .fuente{font-size:10.5px;color:var(--muted-fg);margin-top:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
   /* ---------- responsivo ---------- */
   @media (max-width:1180px){
@@ -438,6 +468,7 @@
   </button>
   <nav class="tabs">
     <button class="tab on" data-vista="mapa">Mapa</button>
+    <button class="tab" data-vista="modelo">Modelo</button>
     <button class="tab" data-vista="metodo">Metodología</button>
     <button class="tab" data-vista="valida">Validación</button>
   </nav>
@@ -564,7 +595,115 @@
   </aside>
 </main>
 
+<!-- ============ MODELO ============ -->
+<section class="pagina" id="vista-modelo">
+  <div class="wrap">
+    <h2>Los tres puntos del asesor</h2>
+    <p class="lead">
+      Cada requerimiento de la reunión con su implementación concreta y su evidencia numérica.
+      Las cifras se recalculan al construir el dashboard desde <code>resumen.json</code>,
+      <code>benchmark_resumen.json</code>, <code>eventos_base.parquet</code> y
+      <code>config/entrenamiento.yaml</code>: ninguna está escrita a mano.
+    </p>
+
+    <!-- ---------- 1 ---------- -->
+    <div class="seccion">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">1 · Espacio de estados y acciones</h2>
+        <span class="estado ok">Implementado</span>
+      </div>
+      <p style="color:var(--muted-fg);font-size:12.5px;margin:8px 0 0;max-width:780px">
+        El <em>universo de tramos</em> es el grafo completo con sus alternativas reales. Sobre él se
+        define un Dec-POMDP cooperativo con entrenamiento centralizado y ejecución descentralizada
+        (CTDE): cada vehículo decide con su observación local, pero aprende contra un crítico que ve
+        el estado global.
+      </p>
+
+      <div class="kpi-grid" id="m1-kpis"></div>
+      <div class="acciones-grid" id="m1-acciones"></div>
+
+      <details class="obs">
+        <summary>
+          <span class="flecha">▶</span>
+          Observación local: <span id="m1-dim">—</span> dimensiones por agente
+        </summary>
+        <div class="cuerpo">
+          <ul class="obs-lista" id="m1-obs"></ul>
+          <p class="fuente">Definición exacta en <code>src/entorno/entorno_rutas.py → _obs_agente()</code>.</p>
+        </div>
+      </details>
+
+      <div class="nota">
+        <b>Por qué la alterna no es un adorno:</b> se calcula con <code>nx.bridges()</code> sobre el
+        grafo. Si el tramo es arista de corte no existe desvío posible y el agente <em>solo</em> puede
+        esperar; el resto sí admite replanificación. Esa distinción es la que hace que «tomar alterna»
+        y «esperar» tengan consecuencias distintas y aprendibles.
+      </div>
+    </div>
+
+    <!-- ---------- 2 ---------- -->
+    <div class="seccion">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">2 · Línea de base: los viajes registrados</h2>
+        <span class="estado ok">Reconstruido</span>
+        <span class="estado pend">Falta correrlo como política</span>
+      </div>
+      <p style="color:var(--muted-fg);font-size:12.5px;margin:8px 0 0;max-width:780px">
+        Los viajes de la empresa son el «plan de ruta» estático tradicional. Al montarlos sobre la
+        red se obtiene su distancia real por carretera, su tiempo de flujo libre y su costo, que es
+        la vara contra la que se medirá al MARL.
+      </p>
+
+      <div class="kpi-grid" id="m2-kpis"></div>
+
+      <table>
+        <thead><tr><th>Artefacto</th><th>Qué contiene</th></tr></thead>
+        <tbody id="m2-tabla"></tbody>
+      </table>
+
+      <div class="nota warn">
+        <b>Lo que falta para cerrar el punto:</b> el benchmark está calculado, pero todavía no se
+        ejecuta <em>dentro del entorno</em>. Para comparar con la misma vara hace falta un agente
+        «histórico» que reproduzca el viaje registrado paso a paso y devuelva su recompensa
+        acumulada en el mismo episodio y con los mismos eventos que el MARL. Sin eso se compararían
+        dos números de naturaleza distinta.
+      </div>
+    </div>
+
+    <!-- ---------- 3 ---------- -->
+    <div class="seccion">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">3 · Discretización sin GPS continuo</h2>
+        <span class="estado ok">Implementado</span>
+        <span class="estado pend">«Subtramo» implícito</span>
+      </div>
+      <p style="color:var(--muted-fg);font-size:12.5px;margin:8px 0 0;max-width:780px">
+        No hay telemetría histórica, así que el avance no se reconstruye con trazas: se modela como
+        secuencia de tramos con progreso continuo dentro de cada uno. La posición sale del par
+        (tramo, progreso) y no de un punto GPS.
+      </p>
+
+      <div class="kpi-grid" id="m3-kpis"></div>
+
+      <table>
+        <thead><tr><th>Elemento</th><th>Cómo se modela</th></tr></thead>
+        <tbody id="m3-tabla"></tbody>
+      </table>
+
+      <div class="nota">
+        <b>Sobre «tramos y subtramos»:</b> no existe la entidad <code>subtramo</code> como tal; se
+        resuelve con el par (tramo, <code>progreso_tramo</code>), que da granularidad efectiva menor
+        a un tramo: la mediana es <span id="m3-medio">—</span> km y el
+        <span id="m3-cortos">—</span> % de los tramos mide menos de 100 m. Partir cada tramo en
+        <em>k</em> subtramos de longitud fija no añadiría información: el progreso continuo ya la
+        contiene.
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ METODOLOGÍA ============ -->
+
 <section class="pagina" id="vista-metodo">
   <div class="wrap">
     <h2>Cómo se construyó esta red</h2>
@@ -1227,8 +1366,10 @@
       b.classList.add('on');
       const v = b.dataset.vista;
       document.getElementById('vista-mapa').style.display = (v==='mapa') ? '' : 'none';
-      document.getElementById('vista-metodo').classList.toggle('on', v==='metodo');
-      document.getElementById('vista-valida').classList.toggle('on', v==='valida');
+      ['modelo','metodo','valida'].forEach(function(k){
+        const el = document.getElementById('vista-' + k);
+        if (el) el.classList.toggle('on', v === k);
+      });
       if (v==='mapa') setTimeout(function(){ mapa.invalidateSize(); }, 60);
     });
   });
@@ -1239,6 +1380,7 @@
   }
   if (location.hash === '#metodo') abrirVista('metodo');
   if (location.hash === '#valida') abrirVista('valida');
+  if (location.hash === '#modelo') abrirVista('modelo');
 
   /* ---------- mobile drawers ---------- */
   const sidebarEl = document.getElementById('sidebar');
@@ -1329,7 +1471,109 @@
 
 
 
+  /* ---------- pestaña Modelo ---------- */
+  const M = D.modelo || {};
+  const ENT = M.entorno || {}, TRAMO = M.tramo || {}, EV = M.eventos || {}, RED = M.red || {};
+  const ACC = M.acciones || {}, BEN = M.benchmark || {};
+  const tarjeta = function(v, lab, nota){
+    return '<div class="kpi-card"><b>'+v+'</b><span>'+lab+'</span>'+(nota?'<em>'+nota+'</em>':'')+'</div>';
+  };
+  const rellenar = function(id, html){
+    const e = document.getElementById(id);
+    if (e) e.innerHTML = html;
+  };
+
+  /* --- 1 · estados y acciones --- */
+  rellenar('m1-kpis',
+    tarjeta(nf(D.meta.n_decision), 'Nodos de decisión', 'donde se puede elegir') +
+    tarjeta(nf(RED.n_tramos || D.meta.n_tramos), 'Tramos', 'aristas entre esos nodos') +
+    tarjeta(nf(Math.round(RED.km || D.meta.km)), 'km de red', 'geometría real de OSM') +
+    tarjeta((RED.alterna_pct || 0).toFixed(1) + ' %', 'Con desvío real', 'el resto son aristas de corte') +
+    tarjeta(ACC.n_acciones || '—', 'Acciones', 'discretas y excluyentes') +
+    tarjeta(ACC.dim_obs || '—', 'Dimensiones', 'observación local por vehículo')
+  );
+
+  const NOMBRE_ACCION = {
+    continuar:'Continuar', tomar_alterna:'Tomar alterna',
+    esperar:'Esperar', replanificar:'Replanificar'
+  };
+  const DESC_ACCION = {
+    continuar:'Sigue el plan vigente sin recalcular. Es lo que hace hoy el conductor.',
+    tomar_alterna:'Rodea el tramo por una vía paralela. Solo si el tramo no es arista de corte; en el simulador encarece la ruta ≈ 2 %.',
+    esperar:'Se detiene hasta que el evento se libere. Si el bloqueo supera el horizonte, el viaje no entrega.',
+    replanificar:'Recalcula el camino desde el nodo actual (Dijkstra por tiempo). Tope: ' +
+      (ENT.max_replan || '—') + ' por agente y episodio.'
+  };
+  rellenar('m1-acciones', (ACC.acciones || []).map(function(a){
+    return '<div class="accion"><div class="id">ACCIÓN ' + a.id + '</div><b>' +
+      (NOMBRE_ACCION[a.clave] || a.clave) + '</b><p>' + (DESC_ACCION[a.clave] || '') + '</p></div>';
+  }).join(''));
+
+  const OBS = [
+    'distancia restante al destino', 'tiempo restante estimado', 'holgura de la ventana horaria',
+    'fracción de entregas pendientes', 'costo acumulado', 'retraso acumulado', 'progreso del viaje',
+    'hora del día (seno)', 'hora del día (coseno)', 'congestión activa en el tramo',
+    'bloqueo o avería activa', 'entregas pendientes (0–4)', 'replanificaciones usadas',
+    'salidas del nodo actual', '¿está en el destino?', 'progreso dentro del tramo (0–1)',
+    'severidad del evento activo', '¿detenido en un nodo?', 'tiempo del tramo siguiente (ajustado)',
+    '¿el tramo tiene desvío? (+1 / −1)'
+  ];
+  rellenar('m1-obs', OBS.map(function(t, i){
+    return '<li><i>o[' + i + ']</i><span>' + t + '</span></li>';
+  }).join(''));
+  setTxt('m1-dim', ACC.dim_obs || OBS.length);
+
+  /* --- 2 · línea de base --- */
+  rellenar('m2-kpis',
+    tarjeta(nf(BEN.n_viajes_validos || 0) + ' / ' + nf(BEN.n_viajes || 0), 'Viajes reconstruidos', 'del registro de la empresa') +
+    tarjeta(nf(BEN.n_viajes_fuera || 0), 'Fuera de cobertura', 'viajes que no se pudieron montar') +
+    tarjeta((BEN.ratio_red_geo || 0).toFixed(2), 'Ratio red / geodésica', 'sinuosidad real del recorrido') +
+    tarjeta(nf(Math.round(BEN.km_red_medio || 0)), 'km medios por red', 'por viaje') +
+    tarjeta(nf(Math.round(BEN.km_geo_medio || 0)), 'km geodésicos', 'línea recta entre paradas') +
+    tarjeta(nf(Math.round(BEN.duracion_media_min || 0)), 'min de duración media', 'tiempo de flujo libre')
+  );
+
+  rellenar('m2-tabla',
+    '<tr><td><code>benchmark_viajes.csv</code></td><td>' + nf(BEN.n_viajes || 0) +
+      ' viajes con km y minutos por red, km geodésicos y bandera de cobertura</td></tr>' +
+    '<tr><td><code>benchmark_paradas.csv</code></td><td>' + nf(BEN.n_paradas || 0) +
+      ' paradas con nodo de snap, llegada real y fin de descarga</td></tr>' +
+    '<tr><td><code>puntos_snap.csv</code></td><td>' + nf(BEN.n_puntos || 0) +
+      ' puntos geocodificados y su distancia a la red (máx ' +
+      (BEN.dist_snap_max_m || 0).toFixed(1) + ' m)</td></tr>' +
+    '<tr><td><code>benchmark_resumen.json</code></td><td>agregados que alimentan esta pestaña</td></tr>'
+  );
+
+  /* --- 3 · discretización --- */
+  rellenar('m3-kpis',
+    tarjeta((ENT.dt_min || 0) + ' min', 'Paso temporal', 'bloques de ' + (ENT.dt_min || 0) + ' min') +
+    tarjeta(nf(ENT.horizonte_pasos || 0), 'Pasos por episodio', '≈ ' +
+      Math.round((ENT.horizonte_pasos || 0) * (ENT.dt_min || 0) / 60) + ' h de horizonte') +
+    tarjeta((ENT.descanso_min || 0) + ' min', 'Descanso obligatorio', 'cada ' +
+      (ENT.descanso_cada_h || 0) + ' h de conducción') +
+    tarjeta((TRAMO.km_mediana || 0).toFixed(2) + ' km', 'Longitud mediana de tramo', 'media ' +
+      (TRAMO.km_medio || 0).toFixed(2) + ' km') +
+    tarjeta(nf(EV.n_eventos || 0), 'Eventos simulados', (EV.pct_tramos || 0).toFixed(2) +
+      ' % de los tramos afectados') +
+    tarjeta((EV.objetivo_rutas_pct || 0).toFixed(1) + ' %', 'Objetivo SUTRAN', 'rutas afectadas por bloqueo o clima')
+  );
+
+  rellenar('m3-tabla',
+    '<tr><td>Avance del vehículo</td><td>Por tramo, con progreso continuo 0–1 dentro de cada uno</td></tr>' +
+    '<tr><td>Reloj</td><td>Pasos de ' + (ENT.dt_min || 0) +
+      ' min; el remanente de cada paso se arrastra como crédito, sin redondeos</td></tr>' +
+    '<tr><td>Tiempo de viaje</td><td>Flujo libre por tipo de vía (maxspeed de OSM), multiplicado por el factor del evento</td></tr>' +
+    '<tr><td>Distancia</td><td>Haversine sobre la geometría real del tramo, no sobre la línea recta entre nodos</td></tr>' +
+    '<tr><td>Servicio en el cliente</td><td>Estancia observada (llegada real → fin de descarga) como servicio + espera</td></tr>' +
+    '<tr><td>Descanso del conductor</td><td>' + (ENT.descanso_min || 0) + ' min cada ' +
+      (ENT.descanso_cada_h || 0) + ' h de conducción continua</td></tr>' +
+    '<tr><td>Posición sin GPS</td><td>Se deriva del par (tramo, progreso); no se requiere telemetría histórica</td></tr>'
+  );
+  setTxt('m3-medio', (TRAMO.km_mediana || 0).toFixed(2));
+  setTxt('m3-cortos', TRAMO.pct_menor_100m != null ? TRAMO.pct_menor_100m : '—');
+
   /* ---------- arranque ---------- */
+
   _aplicar();
   const ms = Math.round(performance.now() - t0);
   document.getElementById('loader-txt').textContent = 'Listo · ' + nf(TR.length) + ' tramos en ' + ms + ' ms';
