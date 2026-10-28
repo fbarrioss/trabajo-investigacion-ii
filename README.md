@@ -45,6 +45,11 @@ python scripts/05_diagnostico_movimiento.py
 # 2c) Dashboard HTML de la red (autocontenido)
 python dashboard/build_dashboard.py
 
+# 2d) Benchmark con los viajes reales de la empresa
+#     (lee puntos_entrega.xlsx y el libro de viajes desde ~/Downloads)
+python scripts/06_integrar_viajes.py
+python scripts/07_cobertura_muestra.py    # marco muestral de ese extracto
+
 # 3) Entrenamiento
 python scripts/03_entrenar.py --algoritmo qmix  --episodios 2000 --semillas 1 2 3
 python scripts/03_entrenar.py --algoritmo mappo --episodios 2000 --semillas 1

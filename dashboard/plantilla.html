@@ -656,10 +656,40 @@
 
       <div class="kpi-grid" id="m2-kpis"></div>
 
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 0">
+        <h3 style="margin:0;font-size:13px;font-weight:600">¿Qué tan completa es esa muestra?</h3>
+        <span class="estado pend" id="m2-estado-muestra">extracto, no histórico completo</span>
+      </div>
+      <p style="color:var(--muted-fg);font-size:12.5px;margin:6px 0 0;max-width:780px">
+        La empresa entrega un extracto, no la operación completa. Medido sobre la red: la muestra
+        recorre una fracción pequeña de los tramos, pero concentra el grueso de los kilómetros.
+        El universo sobredimensionado es red urbana fina que sirve para desvíos, no demanda.
+      </p>
+      <div class="kpi-grid" id="m2-kpis-muestra"></div>
+
+      <details class="obs">
+        <summary><span class="flecha">▶</span> Cobertura por jerarquía vial</summary>
+        <div class="cuerpo">
+          <table>
+            <thead><tr><th>Jerarquía</th><th class="num">Tramos usados</th><th class="num">Cobertura</th></tr></thead>
+            <tbody id="m2-tipos"></tbody>
+          </table>
+          <p class="fuente">Generado por <code>scripts/07_cobertura_muestra.py</code>.</p>
+        </div>
+      </details>
+
       <table>
         <thead><tr><th>Artefacto</th><th>Qué contiene</th></tr></thead>
         <tbody id="m2-tabla"></tbody>
       </table>
+
+      <div class="nota">
+        <b>Cómo se maneja el sesgo de la muestra:</b> la comparación es <em>pareada</em> —el mismo
+        viaje, con los mismos eventos y la misma ventana horaria, resuelto por la política histórica
+        y por el MARL—, así que cualquier sesgo de selección afecta a ambas por igual y se cancela
+        en la diferencia. El extracto no se usa para entrenar: el modelo entrena con episodios
+        sintéticos calibrados; el histórico sirve para calibrar distribuciones y para validar.
+      </div>
 
       <div class="nota warn">
         <b>Lo que falta para cerrar el punto:</b> el benchmark está calculado, pero todavía no se
@@ -1524,6 +1554,7 @@
   setTxt('m1-dim', ACC.dim_obs || OBS.length);
 
   /* --- 2 · línea de base --- */
+  const COB = M.cobertura || {}, MU = COB.muestra || {}, UNI = COB.universo || {};
   rellenar('m2-kpis',
     tarjeta(nf(BEN.n_viajes_validos || 0) + ' / ' + nf(BEN.n_viajes || 0), 'Viajes reconstruidos', 'del registro de la empresa') +
     tarjeta(nf(BEN.n_viajes_fuera || 0), 'Fuera de cobertura', 'viajes que no se pudieron montar') +
@@ -1543,6 +1574,28 @@
       (BEN.dist_snap_max_m || 0).toFixed(1) + ' m)</td></tr>' +
     '<tr><td><code>benchmark_resumen.json</code></td><td>agregados que alimentan esta pestaña</td></tr>'
   );
+
+  /* --- 2b · qué tan completa es la muestra --- */
+  rellenar('m2-kpis-muestra',
+    tarjeta(nf(MU.dias_con_viajes || 0), 'Días con viajes', 'ventana de ' +
+      (MU.fecha_inicio || '').slice(0, 10) + ' a ' + (MU.fecha_fin || '').slice(0, 10)) +
+    tarjeta(MU.n_vehiculos || '—', 'Vehículos', (MU.viajes_por_vehiculo_medio || 0) +
+      ' viajes por unidad') +
+    tarjeta((MU.viajes_por_dia_medio || 0), 'Viajes por día', 'ritmo medio de la muestra') +
+    tarjeta(nf(UNI.tramos_usados || 0), 'Tramos recorridos', (UNI.pct_tramos_usados || 0) +
+      ' % del universo') +
+    tarjeta(nf(Math.round(UNI.km_usados || 0)), 'km recorridos', (UNI.pct_km_usados || 0) +
+      ' % de los 14 020 km') +
+    tarjeta(nf(Math.round(UNI.tramos_repetidos_media || 0)), 'Usos por tramo', 'cuántas veces pasa la flota')
+  );
+
+  rellenar('m2-tipos', (UNI.por_tipo || []).map(function(t){
+    return '<tr><td>' + (NOMBRE_ES[t.tipo] || t.tipo) + '</td>' +
+           '<td class="num">' + nf(t.usados) + ' / ' + nf(t.total) + '</td>' +
+           '<td class="num" style="font-weight:600;color:' +
+             (t.pct >= 25 ? '#15803d' : t.pct >= 5 ? '#b45309' : '#a1a1aa') + '">' +
+             t.pct.toFixed(1) + ' %</td></tr>';
+  }).join(''));
 
   /* --- 3 · discretización --- */
   rellenar('m3-kpis',

@@ -73,6 +73,49 @@ tiempo **por red**, no geodésico.
 | `benchmark/benchmark_viajes.csv` | 500 viajes con km/min por red, km geodésico y flags |
 | `benchmark/benchmark_paradas.csv` | 1 982 paradas con nodo, distancia acumulada y tiempos reales |
 | `benchmark/benchmark_resumen.json` | Métricas agregadas |
+| `benchmark/cobertura_muestra.json` | Marco muestral: ventana temporal, flota y cobertura sobre el universo de tramos |
+
+## 5.1 Marco muestral: la empresa no entrega el histórico completo
+
+El registro de la empresa es un **extracto**, no la operación íntegra. Eso no
+invalida el benchmark, pero obliga a declarar qué se tiene y qué no. Medido con
+`scripts/07_cobertura_muestra.py`:
+
+| Dimensión | Valor |
+|---|---|
+| Viajes | 500 (1 982 paradas) |
+| Ventana | 2025-12-07 → 2026-08-18 · **244 días con viajes** |
+| Ritmo | 2.05 viajes por día con actividad |
+| Flota | 9 vehículos (≈ 56 viajes por unidad) |
+| Puntos de entrega | 25 |
+| Tramos recorridos | **1 687 de 28 312 (6.0 %)** |
+| Kilómetros recorridos | **2 050.9 de 14 019.6 (14.6 %)** |
+| Reutilización | 163 viajes por tramo usado (mediana del tramo activo) |
+
+La lectura correcta de ese 6 % es la que importa: **la muestra no toca el 94 %
+restante de los tramos porque ese resto no es ruta operativa**, no porque falte
+información. La cobertura se concentra donde está la decisión:
+
+| Jerarquía | Cobertura de la muestra |
+|---|---|
+| Autopista (`motorway`) | **38.3 %** (204 de 532) |
+| Carretera troncal (`trunk`) | **28.5 %** (649 de 2 280) |
+| Primaria (`primary`) | 6.7 % (392 de 5 878) |
+| Secundaria (`secondary`) | 3.1 % (280 de 9 054) |
+| Terciaria (`tertiary`) | 1.5 % (105 de 7 165) |
+
+Es decir: la muestra recorre el 38 % de las autopistas y el 28 % de las
+troncales, y apenas roza la red terciaria urbana. El universo grande existe para
+que el agente tenga **alternativas de desvío**, no porque se espere tráfico en
+cada tramo.
+
+**Cómo se maneja el sesgo de selección.** La comparación es *pareada*: el mismo
+viaje, con los mismos eventos y la misma ventana horaria, resuelto por la
+política histórica y por el MARL. Cualquier sesgo de selección afecta a ambas
+políticas por igual y se cancela en la diferencia. Además, el histórico **no se
+usa para entrenar** —el modelo entrena con episodios sintéticos calibrados—;
+el extracto sirve para calibrar distribuciones y para validar contra la
+operación real.
 
 ## 6. Limitaciones y siguientes pasos
 
@@ -87,11 +130,17 @@ tiempo **por red**, no geodésico.
    como servicio + espera.
 4. **Siguiente paso**: usar este benchmark como línea base de la operación
    manual para comparar la política MARL (mismos viajes, mismas ventanas).
+5. **Muestra, no censo**: los 500 viajes son el extracto que la empresa pudo
+   entregar, no el histórico completo. Se documenta el marco muestral (§5.1) y
+   la comparación se hace pareada para que el sesgo se cancele. Si la empresa
+   entrega más registros, `scripts/06_integrar_viajes.py` reprocesa todo sin
+   cambiar el modelo: el pipeline es idempotente.
 
 ## 7. Reproducir
 
 ```bash
-python scripts/06_integrar_viajes.py
+python scripts/06_integrar_viajes.py      # reconstruye el benchmark
+python scripts/07_cobertura_muestra.py    # mide el marco muestral
 ```
 
 Requiere `geopy` y `openpyxl` (ya en `requirements.txt`). El caché de

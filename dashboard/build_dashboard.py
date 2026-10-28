@@ -100,6 +100,14 @@ def _calibracion_eventos(n_tramos: int) -> dict:
     }
 
 
+def _cobertura_muestra() -> dict:
+    """Qué parte del universo recorre la muestra real (script 07)."""
+    ruta = BENCH / "cobertura_muestra.json"
+    if not ruta.exists():
+        return {}
+    return json.loads(ruta.read_text(encoding="utf-8"))
+
+
 def _coords_planas(coords: list[list[float]]) -> list[float]:
     """Convierte [[lon,lat],...] en [lon,lat,lon,lat,...] redondeado a 5 dec."""
     if len(coords) > 2:
@@ -182,6 +190,7 @@ def main() -> int:
         "entorno": _parametros_entorno(),
         "acciones": _constantes_entorno(),
         "benchmark": _resumen_benchmark(),
+        "cobertura": _cobertura_muestra(),
         "eventos": _calibracion_eventos(int(resumen["n_tramos"])),
         "tramo": {
             "km_medio": round(float(dist.mean()), 3),
