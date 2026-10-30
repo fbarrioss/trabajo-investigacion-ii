@@ -1,6 +1,7 @@
 # Valhalla local con perfil de camión sobre el PBF de Perú.
 #
 # Uso:
+#   cp data/raw/pbf/peru-latest.osm.pbf data/raw/valhalla/   # una sola vez
 #   cd infra/valhalla
 #   docker compose up -d          # la primera vez construye los tiles (~20-40 min)
 #   docker compose logs -f        # seguir el avance de la construcción
@@ -8,6 +9,10 @@
 #
 # Los tiles quedan en data/raw/valhalla/ (ignorado por git, se regeneran).
 # El servidor expone http://localhost:8002 y documentación en /docs.
+#
+# OJO: la imagen NO acepta rutas locales en `tile_urls`; solo descarga desde
+# URLs. El PBF tiene que estar dentro de /custom_files para que lo detecte
+# (busca *.pbf en ese directorio). Dejar `tile_urls` sin definir.
 
 services:
   valhalla:
@@ -17,13 +22,10 @@ services:
     ports:
       - "8002:8002"
     volumes:
-      # Tiles, admins y time zones se escriben aquí.
+      # Tiles, admins y time zones se escriben aquí. El PBF de entrada también
+      # va aquí: la imagen escanea este directorio en busca de *.pbf.
       - ../../data/raw/valhalla:/custom_files
-      # PBF de entrada, solo lectura.
-      - ../../data/raw/pbf:/pbf:ro
     environment:
-      # Extracto de entrada. La imagen lo detecta y construye los tiles.
-      - tile_urls=/pbf/peru-latest.osm.pbf
       - use_tiles_ignore_pbf=False
       - build_tiles=True
       - build_admins=True

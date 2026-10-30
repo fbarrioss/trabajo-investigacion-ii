@@ -52,6 +52,7 @@ ya cumple.
 ## 4. Puesta en marcha
 
 ```bash
+cp data/raw/pbf/peru-latest.osm.pbf data/raw/valhalla/   # una sola vez
 cd infra/valhalla
 docker compose up -d          # la primera vez construye los tiles (~20-40 min)
 docker compose logs -f        # seguir el avance
@@ -59,6 +60,11 @@ docker compose logs -f        # seguir el avance
 
 Los tiles se escriben en `data/raw/valhalla/` (ignorado por git). El servidor
 queda en `http://localhost:8002`, con documentación interactiva en `/docs`.
+
+> **El PBF debe estar dentro de `/custom_files`.** La imagen solo busca `*.pbf`
+> en ese directorio; `tile_urls` sirve exclusivamente para descargar desde una
+> URL, no para apuntar a una ruta local (si se le pasa una ruta, `curl` falla
+> con *"URL rejected: No host part in the URL"*).
 
 Requisitos: Docker con al menos **4 GB** libres para la construcción inicial de
 Perú; 8 GB es lo cómodo.

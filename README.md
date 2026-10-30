@@ -86,6 +86,7 @@ públicos y devuelven 500/504).
 ### Motor de rutas (Valhalla)
 
 ```bash
+cp data/raw/pbf/peru-latest.osm.pbf data/raw/valhalla/   # una sola vez: la imagen busca *.pbf aquí
 cd infra/valhalla
 docker compose up -d          # la primera vez construye los tiles de Perú (~20-40 min)
 docker compose logs -f        # seguir el avance
