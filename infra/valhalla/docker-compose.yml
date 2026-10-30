@@ -1,0 +1,41 @@
+# Valhalla local con perfil de camión sobre el PBF de Perú.
+#
+# Uso:
+#   cd infra/valhalla
+#   docker compose up -d          # la primera vez construye los tiles (~20-40 min)
+#   docker compose logs -f        # seguir el avance de la construcción
+#   docker compose down           # detener
+#
+# Los tiles quedan en data/raw/valhalla/ (ignorado por git, se regeneran).
+# El servidor expone http://localhost:8002 y documentación en /docs.
+
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: valhalla-peru
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    volumes:
+      # Tiles, admins y time zones se escriben aquí.
+      - ../../data/raw/valhalla:/custom_files
+      # PBF de entrada, solo lectura.
+      - ../../data/raw/pbf:/pbf:ro
+    environment:
+      # Extracto de entrada. La imagen lo detecta y construye los tiles.
+      - tile_urls=/pbf/peru-latest.osm.pbf
+      - use_tiles_ignore_pbf=False
+      - build_tiles=True
+      - build_admins=True
+      - build_time_zones=True
+      - force_rebuild=False
+      # El corredor es 1 100 km: 4 hilos bastan y dejan CPU al resto del
+      # pipeline. Subir a 8 acelera la construcción inicial.
+      - server_threads=4
+      - serve_tiles=True
+    # La construcción inicial de Perú necesita memoria: por debajo de 4 GB el
+    # proceso muere sin mensaje claro.
+    deploy:
+      resources:
+        limits:
+          memory: 8G
