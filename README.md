@@ -35,6 +35,7 @@ pip install -r requirements.txt
 python scripts/01_red_vial.py
 python scripts/01_red_vial.py --nivel primary     # solo vías principales
 python scripts/01_red_vial.py --recalcular        # ignora la caché del grafo
+python scripts/01_red_vial.py --reconstruir       # reparsea el .osm (trae hgv/maxweight)
 
 # 2) Dataset operativo + eventos calibrados
 python scripts/02_dataset.py --viajes 180
@@ -75,6 +76,26 @@ python -m src.red_vial.descargar_osm todo
 La descarga usa **rotación de espejos** de Overpass y coincidencias exactas de
 `highway` (las expresiones regulares agotan la memoria de los servidores
 públicos y devuelven 500/504).
+
+> `--recalcular` rehace el grafo desde el `.graphml` cacheado; `--reconstruir`
+> vuelve a parsear el `.osm` original. El segundo es obligatorio cuando se
+> añaden etiquetas nuevas a `useful_tags_way` (por ejemplo `hgv` y `maxweight`):
+> el `.graphml` cacheado no las contiene y el resultado saldría sin
+> restricciones de pesados.
+
+### Motor de rutas (Valhalla)
+
+```bash
+cd infra/valhalla
+docker compose up -d          # la primera vez construye los tiles de Perú (~20-40 min)
+docker compose logs -f        # seguir el avance
+cd ../..
+python scripts/08_rutas_valhalla.py            # 7 pares OD, 2 alternativas
+```
+
+El motor se usa **fuera** del bucle de aprendizaje: aporta la línea de base por
+par OD, las K alternativas y una validación independiente de la red. Detalle y
+justificación de la elección en [`docs/07_motor_rutas.md`](docs/07_motor_rutas.md).
 
 ## 3. Estructura
 
