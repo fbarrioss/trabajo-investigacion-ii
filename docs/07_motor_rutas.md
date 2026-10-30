@@ -158,16 +158,72 @@ prácticamente un eje único**: no hay un segundo camino razonable que respete l
 restricciones. Eso refuerza la premisa del problema MARL — el agente decide
 *cuándo* desviarse porque las opciones de desvío son pocas y costosas.
 
+## 5.2 Alternativas sobre la red propia
+
+Como Valhalla devuelve alternativas en solo 2 de 7 pares con perfil camión, se
+añadió `scripts/09_alternativas.py`, que las genera sobre el grafo consolidado:
+son secuencias de `id_tramo` que el simulador puede ejecutar, cosa que una traza
+externa no garantiza.
+
+Método: **diversificación por penalización** (ruta mínima → se multiplica el
+costo de sus aristas → se vuelve a buscar), no Yen. Con Yen el costo es
+O(K · n · (m + n log n)) y sobre 18 167 nodos no termina en tiempo razonable;
+con penalización son K Dijkstras y corre en segundos. Es además la misma familia
+de heurísticas que usan los motores comerciales para `alternates`.
+
+Se descarta un candidato si su solapamiento (Jaccard sobre tramos) con una ruta
+ya aceptada supera `--solapamiento` (0,70) o si excede `--holgura` (1,35) veces
+los km de la mejor. Las rutas se reordenan por tiempo al final: el orden de
+descubrimiento sigue al costo *penalizado*, que no es el costo real.
+
+Resultado: **21 rutas (7 principales + 14 alternativas)**, con solapamiento
+frente a la principal entre 8 % y 37 %.
+
+| Par | Principal | Alt. 2 | Alt. 3 | Valhalla truck |
+|---|---:|---:|---:|---:|
+| LIM–TRU | 575,5 | 600,8 | 597,7 | 609,6 |
+| TRU–CHI | 206,7 | 229,7 | 240,8 | 208,6 |
+| CHI–PIU | 214,1 | 214,1 | 256,5 | 217,6 |
+| PIU–SUL | 40,0 | 45,2 | 42,8 | 39,0 |
+| PIU–CHU | 61,6 | 65,8 | 76,2 | 60,9 |
+| LIM–HUY | 305,1 | 330,9 | 330,5 | 306,6 |
+| PIU–PAI | 58,4 | 60,5 | 64,2 | 58,0 |
+
+### Cuatro referencias para el mismo corredor
+
+LIM–TRU, según quién lo mida:
+
+| Fuente | km | Qué aplica |
+|---|---:|---|
+| `corredor_macro.csv` | 547,6 | distancia pura, **ignora** restricciones |
+| Red propia con penalización | 575,5 | `hgv=no` penalizado + bloqueo físico |
+| Valhalla `auto` | 560,1 | perfil auto |
+| Valhalla `truck` | 609,6 | perfil camión |
+
+Las cuatro caen en una banda del 11 %, que es exactamente el orden de magnitud
+del error esperable entre modelos de costo distintos. Pero conviene tener claro
+que **`corredor_macro.csv` no es la ruta de un camión**: `macro_tramos()` usa
+`weight="distancia_km"`, sin penalización ni restricciones. De ahí que el macro
+de Lima–Trujillo (547,6 km) pase por un tramo de la Panamericana Norte con
+`alto_max_m = 2,0` — imposible para un camión de 4 m — y que el macro de
+LIM–HUY cruce Calle Real / Mariscal Castilla con `peso_max_t = 4,0`. El macro
+sigue siendo válido como referencia geométrica del corredor; la referencia
+**operativa** para camión es la de este script.
+
 ## 6. Qué falta para cerrarlo del todo
 
 - **Agente histórico**: reproducir los 500 viajes registrados *dentro* del
   entorno para obtener una recompensa comparable a la de la política aprendida.
   Valhalla aporta la ruta de referencia, pero la comparación pareada exige
   ejecutar la política histórica en el simulador.
-- **Candidatas por tramo**: hoy las alternativas se piden por par OD, y Valhalla
-  devuelve muy pocas (2 de 7 pares) porque el corredor no tiene segundos caminos
-  para camión. Para alimentar el espacio de acciones conviene generarlas sobre la
-  **red propia** (K caminos más cortos, p. ej. Yen sobre el grafo consolidado,
-  aplicando `penalizacion_pesados`), y dejar a Valhalla como contraste externo.
-  Así las candidatas son secuencias de `id_tramo` que el simulador puede
-  ejecutar, cosa que una traza externa no garantiza.
+- **Conectar las alternativas al entorno**: `alternativas_od.csv` ya tiene 14
+  rutas ejecutables por par OD, pero el simulador todavía no las consume. Falta
+  que la acción «tomar vía alterna» elija entre ellas en vez de recalcular, y
+  decidir si se precalculan por par OD (barato) o por tramo crítico (caro).
+- **Bloqueo físico en el entorno**: `entorno_rutas.py` aplica la penalización de
+  5× pero **no** bloquea los tramos con `alto_max_m` o `peso_max_t` por debajo
+  del camión. Son solo 21 aristas de 33 717 (15 tramos, 6,7 km), y las rutas
+  principales no cambian porque la penalización ya las evita; pero un agente que
+  explore puede colarse por una. Propagarlo obliga a regenerar benchmark,
+  dataset y dashboard, así que se dejó fuera de esta corrección.
+

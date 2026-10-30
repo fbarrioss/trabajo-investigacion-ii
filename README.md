@@ -51,6 +51,7 @@ python dashboard/build_dashboard.py
 python scripts/06_integrar_viajes.py
 python scripts/07_cobertura_muestra.py    # marco muestral de ese extracto
 python scripts/08_rutas_valhalla.py        # rutas de referencia con perfil camión (requiere Valhalla)
+python scripts/09_alternativas.py          # 7 principales + 14 alternativas sobre la red propia
 
 # 3) Entrenamiento
 python scripts/03_entrenar.py --algoritmo qmix  --episodios 2000 --semillas 1 2 3
@@ -97,6 +98,10 @@ python scripts/08_rutas_valhalla.py            # 7 pares OD, 2 alternativas
 El motor se usa **fuera** del bucle de aprendizaje: aporta la línea de base por
 par OD, las K alternativas y una validación independiente de la red. Detalle y
 justificación de la elección en [`docs/07_motor_rutas.md`](docs/07_motor_rutas.md).
+
+Como Valhalla devuelve alternativas en solo 2 de 7 pares con perfil camión,
+`scripts/09_alternativas.py` las genera sobre la red propia (K rutas por par OD,
+ejecutables por el simulador) sin necesidad de tener el motor levantado.
 
 ## 3. Estructura
 
