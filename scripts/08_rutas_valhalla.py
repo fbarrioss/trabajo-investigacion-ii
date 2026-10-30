@@ -24,6 +24,7 @@ Uso:
     cd infra/valhalla && docker compose up -d
     python scripts/08_rutas_valhalla.py
     python scripts/08_rutas_valhalla.py --alternativas 3 --peso-t 36
+    python scripts/08_rutas_valhalla.py --comparar-auto --sensibilidad-peso
 """
 from __future__ import annotations
 
@@ -92,15 +93,25 @@ def consultar_ruta(
     alto_m: float,
     ancho_m: float,
     largo_m: float,
+    perfil: str = "truck",
 ) -> dict:
-    """Pide a Valhalla la ruta principal y sus alternativas con perfil camión."""
+    """Pide a Valhalla la ruta principal y sus alternativas.
+
+    ``perfil="truck"`` aplica las restricciones de pesados; ``perfil="auto"``
+    sirve de contraste para aislar cuánto del desvío se debe a esas
+    restricciones y no a la topología.
+    """
     cuerpo = {
         "locations": [
             {"lat": origen[0], "lon": origen[1], "type": "break"},
             {"lat": destino[0], "lon": destino[1], "type": "break"},
         ],
-        "costing": "truck",
-        "costing_options": {
+        "costing": perfil,
+        "units": "kilometers",
+        "directions_options": {"units": "kilometers"},
+    }
+    if perfil == "truck":
+        cuerpo["costing_options"] = {
             "truck": {
                 "height": alto_m,
                 "width": ancho_m,
@@ -109,13 +120,10 @@ def consultar_ruta(
                 "axle_load": peso_t / 5.0,
                 "hazmat": False,
             }
-        },
-        "units": "kilometers",
-        "directions_options": {"units": "kilometers"},
-    }
+        }
     if alternativas > 0:
         cuerpo["alternates"] = alternativas
-    r = requests.post(f"{url}/route", json=cuerpo, timeout=120)
+    r = requests.post(f"{url}/route", json=cuerpo, timeout=180)
     r.raise_for_status()
     return r.json()
 
@@ -142,6 +150,19 @@ def main() -> int:
     ap.add_argument("--ancho-m", type=float, default=2.6)
     ap.add_argument("--largo-m", type=float, default=18.0)
     ap.add_argument("--salida", default=str(SALIDA))
+    ap.add_argument(
+        "--comparar-auto", action="store_true",
+        help="consulta también el perfil auto para aislar el efecto de las "
+             "restricciones de pesados",
+    )
+    ap.add_argument(
+        "--sensibilidad-peso", action="store_true",
+        help="barre el peso bruto para localizar el umbral que rompe el corredor",
+    )
+    ap.add_argument(
+        "--pesos", default="30,36,37,40,42,48",
+        help="pesos a probar en --sensibilidad-peso (t, separados por coma)",
+    )
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
@@ -193,22 +214,40 @@ def main() -> int:
         id_macro = f"{origen_id}-{destino_id}"
         km_propio = km_red.get(id_macro)
 
-        filas.append(
-            {
-                "id_macro": id_macro,
-                "alcance": alcance,
-                "km_valhalla": principal["km"],
-                "min_valhalla": principal["min"],
-                "km_red_propia": km_propio,
-                "desvio_pct": (
-                    round(100.0 * (principal["km"] / km_propio - 1.0), 2)
+        fila = {
+            "id_macro": id_macro,
+            "alcance": alcance,
+            "km_valhalla": principal["km"],
+            "min_valhalla": principal["min"],
+            "km_red_propia": km_propio,
+            "desvio_pct": (
+                round(100.0 * (principal["km"] / km_propio - 1.0), 2)
+                if km_propio else None
+            ),
+            "n_alternativas": len(alts),
+            "km_alternativas": ";".join(f"{a['km']:.1f}" for a in alts),
+            "min_alternativas": ";".join(f"{a['min']:.1f}" for a in alts),
+        }
+
+        if args.comparar_auto:
+            try:
+                auto = _resumen(
+                    consultar_ruta(
+                        args.url, pos[origen_id], pos[destino_id], 0,
+                        args.peso_t, args.alto_m, args.ancho_m, args.largo_m,
+                        perfil="auto",
+                    )["trip"]
+                )
+                fila["km_auto"] = auto["km"]
+                fila["desvio_auto_pct"] = (
+                    round(100.0 * (auto["km"] / km_propio - 1.0), 2)
                     if km_propio else None
-                ),
-                "n_alternativas": len(alts),
-                "km_alternativas": ";".join(f"{a['km']:.1f}" for a in alts),
-                "min_alternativas": ";".join(f"{a['min']:.1f}" for a in alts),
-            }
-        )
+                )
+                fila["sobrecosto_restriccion_km"] = round(principal["km"] - auto["km"], 1)
+            except Exception as exc:  # noqa: BLE001
+                logging.warning("%s→%s perfil auto: %s", origen_id, destino_id, exc)
+
+        filas.append(fila)
 
         for etiqueta, r in [("principal", principal)] + [
             (f"alterna_{i}", a) for i, a in enumerate(alts, start=1)
@@ -236,6 +275,36 @@ def main() -> int:
             origen_id, destino_id, principal["km"], principal["min"], len(alts),
         )
 
+    # --- Sensibilidad al peso bruto -----------------------------------------
+    # El corredor tiene tramos con maxweight=36 t en la Panamericana Norte. Al
+    # superarlos el motor no puede usar la ruta directa y rodea cientos de km.
+    sens: list[dict] = []
+    if args.sensibilidad_peso:
+        pesos = [float(x) for x in args.pesos.split(",") if x.strip()]
+        logging.info("Barriendo pesos %s t sobre %d pares", pesos, len(pares))
+        for origen_id, destino_id, _ in pares:
+            if origen_id not in pos or destino_id not in pos:
+                continue
+            for w in pesos:
+                try:
+                    r = _resumen(
+                        consultar_ruta(
+                            args.url, pos[origen_id], pos[destino_id], 0,
+                            w, args.alto_m, args.ancho_m, args.largo_m,
+                        )["trip"]
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logging.error("%s→%s %s t: %s", origen_id, destino_id, w, exc)
+                    continue
+                sens.append(
+                    {
+                        "id_macro": f"{origen_id}-{destino_id}",
+                        "peso_t": w,
+                        "km": r["km"],
+                        "min": r["min"],
+                    }
+                )
+
     destino = Path(args.salida)
     destino.mkdir(parents=True, exist_ok=True)
     tabla = pd.DataFrame(filas)
@@ -259,6 +328,10 @@ def main() -> int:
         json.dumps({"type": "FeatureCollection", "features": geo}, ensure_ascii=False),
         encoding="utf-8",
     )
+    if sens:
+        pd.DataFrame(sens).to_csv(
+            destino / "sensibilidad_peso.csv", index=False, encoding="utf-8"
+        )
 
     print("\n" + "=" * 68)
     print("  RUTAS DE REFERENCIA — VALHALLA (perfil truck)")
@@ -271,6 +344,26 @@ def main() -> int:
                 f"\n  Desvío medio frente a la red propia: {validos.mean():+.2f} % "
                 f"(máx {validos.abs().max():.2f} %)"
             )
+        if "km_auto" in tabla.columns:
+            auto = tabla["desvio_auto_pct"].dropna()
+            if len(auto):
+                print(
+                    f"  Desvío del perfil auto (sin restricciones): {auto.mean():+.2f} % "
+                    f"→ el sobrecosto de pesados es de "
+                    f"{tabla['sobrecosto_restriccion_km'].sum():+.1f} km en el corredor"
+                )
+    if sens:
+        piv = (
+            pd.DataFrame(sens)
+            .pivot(index="id_macro", columns="peso_t", values="km")
+            .round(1)
+        )
+        print("\n  SENSIBILIDAD AL PESO BRUTO (km)")
+        print(piv.to_string())
+        print(
+            "\n  Un salto entre dos columnas consecutivas marca el peso a partir "
+            "del cual el corredor directo deja de ser transitable."
+        )
     print(f"\n  Archivos en {destino}")
     print("=" * 68)
     return 0
