@@ -174,6 +174,19 @@ class TramoVial(_Entidad):
     zona: str
     sinuosidad: float
     riesgo_base: float
+    # --- sentido de circulación -------------------------------------------
+    sentido: str = "doble"           # doble | ini_fin | fin_ini
+    sentido_ini_fin: bool = True
+    sentido_fin_ini: bool = True
+    # --- restricciones de vehículos pesados --------------------------------
+    acceso_hgv: str = ""             # "" | yes | no | designated | destination
+    peso_max_t: float | None = None
+    alto_max_m: float | None = None
+    ancho_max_m: float | None = None
+    largo_max_m: float | None = None
+    restriccion_pesados: bool = False
+    # --- calidad geométrica ------------------------------------------------
+    es_micro: bool = False           # tramo < 5 m (artefacto de digitalización)
 
 
 @dataclass

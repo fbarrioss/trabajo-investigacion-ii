@@ -179,6 +179,11 @@ def main() -> int:
     zonas = sorted(tramos["zona"].dropna().unique().tolist())
     idx_zona = {z: i for i, z in enumerate(zonas)}
 
+    # Sentido de circulación: 0 = doble, 1 = solo ini→fin, 2 = solo fin→ini.
+    # Se guarda como índice para no repetir la cadena 28 642 veces.
+    sentidos = ["doble", "ini_fin", "fin_ini"]
+    idx_sentido = {s: i for i, s in enumerate(sentidos)}
+
     # El GeoJSON conserva el orden de tramos.csv.
     por_id = {str(r.id_tramo): i for i, r in enumerate(tramos.itertuples(index=False))}
 
@@ -187,19 +192,29 @@ def main() -> int:
         props = feature["properties"]
         fila = tramos.iloc[por_id[props["id_tramo"]]]
         nombre = fila["nombre_via"]
-        lista_tramos.append(
-            {
-                "i": props["id_tramo"],
-                "t": idx_tipo[str(props["tipo_via"])],
-                "d": round(float(props["distancia_km"]), 3),
-                "m": round(float(props["tiempo_flujo_min"]), 4),
-                "p": 1 if props["peaje"] else 0,
-                "a": 1 if bool(fila["tiene_alterna"]) else 0,
-                "z": idx_zona[str(fila["zona"])],
-                "n": idx_nombre[str(nombre)] if pd.notna(nombre) else -1,
-                "c": _coords_planas(feature["geometry"]["coordinates"]),
-            }
-        )
+        tramo = {
+            "i": props["id_tramo"],
+            "t": idx_tipo[str(props["tipo_via"])],
+            "d": round(float(props["distancia_km"]), 3),
+            "m": round(float(props["tiempo_flujo_min"]), 4),
+            "p": 1 if props["peaje"] else 0,
+            "a": 1 if bool(fila["tiene_alterna"]) else 0,
+            "z": idx_zona[str(fila["zona"])],
+            "n": idx_nombre[str(nombre)] if pd.notna(nombre) else -1,
+            "s": idx_sentido.get(str(fila.get("sentido", "doble")), 0),
+            "c": _coords_planas(feature["geometry"]["coordinates"]),
+        }
+        # Restricciones de pesados: solo se escriben cuando existen. Poblarlas
+        # en las 28 642 filas costaría ~250 KB para 206 casos reales.
+        if bool(fila.get("restriccion_pesados", False)):
+            tramo["h"] = 1
+            peso = fila.get("peso_max_t")
+            alto = fila.get("alto_max_m")
+            if pd.notna(peso):
+                tramo["w"] = float(peso)
+            if pd.notna(alto):
+                tramo["g"] = float(alto)
+        lista_tramos.append(tramo)
 
     # Macro-tramos: se traduce la secuencia de IDs a índices de la lista.
     macro_json = []
@@ -246,6 +261,13 @@ def main() -> int:
             "n_tramos": int(resumen["n_tramos"]),
             "km": round(float(resumen["km_totales"]), 1),
             "alterna_pct": float(metricas.get("tramos_con_alterna_pct", 0.0)),
+            "unidireccionales": int(resumen.get("n_unidireccionales", 0)),
+            "unidireccional_pct": round(
+                100.0 * resumen.get("n_unidireccionales", 0) / max(resumen["n_tramos"], 1), 1
+            ),
+            "restringidos": int(resumen.get("n_restriccion_pesados", 0)),
+            "km_restringidos": round(float(resumen.get("km_restriccion_pesados", 0.0)), 1),
+            "micro": int(resumen.get("n_micro_tramos", 0)),
         },
     }
 
@@ -269,6 +291,7 @@ def main() -> int:
         "tipos": tipos,
         "zonas": zonas,
         "nombres": nombres,
+        "sentidos": sentidos,
         "tramos": lista_tramos,
         "ciudades": ciudades.to_dict(orient="records"),
         "distribuidores": distribuidores.to_dict(orient="records"),

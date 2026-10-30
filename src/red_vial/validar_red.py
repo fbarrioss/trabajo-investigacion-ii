@@ -136,8 +136,13 @@ def validar_red(
         r.advertencias.append(f"{grados_bajos} nodos con grado < 2 (fondos de saco).")
 
     # 10. Completitud de atributos (H1 ≥ 90 %) ------------------------------
-    celdas = tramos.shape[0] * tramos.shape[1]
-    vacias = int(tramos.isna().sum().sum())
+    # Se evalúa sobre el esquema obligatorio, no sobre todas las columnas: los
+    # límites de peso y gálibo solo existen donde OSM los declara (~0.3 % de las
+    # vías) y contarlos como celdas vacías haría caer la métrica sin que haya
+    # ningún dato faltante del esquema.
+    evaluadas = [c for c in COLUMNAS_TRAMO if c in tramos.columns]
+    celdas = tramos.shape[0] * len(evaluadas)
+    vacias = int(tramos[evaluadas].isna().sum().sum())
     completitud = 100.0 * (1 - vacias / max(celdas, 1))
     if completitud < 90.0:
         r.errores.append(f"Completitud {completitud:.1f} % < 90 % (umbral H1).")
@@ -171,6 +176,35 @@ def validar_red(
         con_alterna = 0.0
         r.advertencias.append("Falta la columna 'tiene_alterna'.")
 
+    # 14. Lazos degenerados --------------------------------------------------
+    # Un tramo con ini == fin es un self-loop: no permite llegar a ningún otro
+    # nodo y no debería existir en la topología operativa.
+    if "id_nodo_ini" in tramos.columns and "id_nodo_fin" in tramos.columns:
+        lazos = int((tramos["id_nodo_ini"] == tramos["id_nodo_fin"]).sum())
+        if lazos:
+            r.errores.append(f"{lazos} tramos con nodo inicial = nodo final (self-loop).")
+
+    # 15. Integridad del sentido de circulación -----------------------------
+    if {"sentido", "sentido_ini_fin", "sentido_fin_ini", "bidireccional"} <= set(tramos.columns):
+        sin_sentido = int(
+            (~tramos["sentido_ini_fin"].astype(bool)
+             & ~tramos["sentido_fin_ini"].astype(bool)).sum()
+        )
+        if sin_sentido:
+            r.errores.append(
+                f"{sin_sentido} tramos no son recorribles en ningún sentido."
+            )
+        mal_marcados = int(
+            (tramos["bidireccional"].astype(bool)
+             != (tramos["sentido_ini_fin"].astype(bool)
+                 & tramos["sentido_fin_ini"].astype(bool))).sum()
+        )
+        if mal_marcados:
+            r.errores.append(
+                f"{mal_marcados} tramos con 'bidireccional' incoherente con "
+                "sus banderas de sentido."
+            )
+
     r.metricas = {
         "n_nodos": len(nodos),
         "n_tramos": len(tramos),
@@ -181,5 +215,13 @@ def validar_red(
         "conectado": float(conectado),
         "tramos_con_alterna_pct": round(con_alterna, 2),
     }
+    if "sentido" in tramos.columns:
+        r.metricas["tramos_unidireccionales"] = int(
+            (~tramos["bidireccional"].astype(bool)).sum()
+        )
+    if "restriccion_pesados" in tramos.columns:
+        r.metricas["tramos_restriccion_pesados"] = int(
+            tramos["restriccion_pesados"].astype(bool).sum()
+        )
     r.ok = not r.errores
     return r

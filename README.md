@@ -49,6 +49,7 @@ python dashboard/build_dashboard.py
 #     (lee puntos_entrega.xlsx y el libro de viajes desde ~/Downloads)
 python scripts/06_integrar_viajes.py
 python scripts/07_cobertura_muestra.py    # marco muestral de ese extracto
+python scripts/08_rutas_valhalla.py        # rutas de referencia con perfil camión (requiere Valhalla)
 
 # 3) Entrenamiento
 python scripts/03_entrenar.py --algoritmo qmix  --episodios 2000 --semillas 1 2 3
@@ -119,17 +120,19 @@ Chiclayo–Piura + ramal Piura → Chulucanas.
 
 | Indicador | Valor |
 |---|---|
-| Nodos operativos (extremos de tramo) | **17 833** |
+| Nodos operativos (extremos de tramo) | **18 167** |
 | Nodos OSM procesados | 339 863 |
 | Nodos de geometría contraídos | 321 998 |
-| Tramos consolidados | **28 312** |
-| Longitud total de la red | 14 019.6 km |
+| Tramos consolidados | **28 642** |
+| Longitud total de la red | 14 017.1 km |
 | Ciudades asociadas | **8** (6 del corredor + Huancayo y Paita) |
 | Distribuidores ubicados | **17 / 17** |
 | Grafo débilmente conexo | sí |
 | Desvío máximo de snap ciudad → red | 227.5 m (Paita) |
 | Completitud de atributos | 100 % |
 | Tramos con desvío alterno (`tiene_alterna`) | **95.4 %** |
+| Tramos unidireccionales | **23 567 (82.3 %)** |
+| Tramos con restricción de pesados | **206** (102.4 km) |
 
 > Además del corredor norte, la red cubre la **Carretera Central a Huancayo**, el
 > **ramal Piura–Paita** y el **acceso al CEDI de Lima**, necesarios para
@@ -141,12 +144,12 @@ independiente (OSRM, perfil `driving`):
 
 | Tramo | Red construida | OSRM | Desvío |
 |---|---|---|---|
-| Lima → Trujillo | 545.4 km | 557.1 km | −2.1 % |
-| Trujillo → Chiclayo | 202.8 km | 199.5 km | +1.7 % |
-| Chiclayo → Piura | 212.7 km | 214.7 km | −0.9 % |
-| Piura → Sullana | 39.1 km | 38.8 km | +0.8 % |
-| Piura → Chulucanas | 61.5 km | 60.8 km | +1.2 % |
-| **Total** | **1 061.5 km** | **1 070.9 km** | **−0.9 %** |
+| Lima → Trujillo | 547.6 km | 557.1 km | −1.7 % |
+| Trujillo → Chiclayo | 203.2 km | 199.5 km | +1.9 % |
+| Chiclayo → Piura | 212.8 km | 214.7 km | −0.9 % |
+| Piura → Sullana | 39.3 km | 38.8 km | +1.3 % |
+| Piura → Chulucanas | 61.6 km | 60.8 km | +1.3 % |
+| **Total** | **1 064.5 km** | **1 070.9 km** | **−0.6 %** |
 
 Esta comparación es la evidencia de validez de la red: las distancias se
 reconstruyen con un error menor al 2 % sin usar OSRM para construirla.
@@ -160,14 +163,14 @@ extremos), es decir, si no existe ninguna ruta que lo rodee.
 
 | Indicador | Valor |
 |---|---|
-| Tramos con desvío disponible | **27 016 / 28 312 (95.4 %)** |
-| Tramos de corte (sin alternativa) | 1 296 (4.6 %) |
+| Tramos con desvío disponible | **27 314 / 28 642 (95.4 %)** |
+| Tramos de corte (sin alternativa) | 1 328 (4.6 %) |
 | Longitud sin alternativa | 4 398.7 km (31.4 %) |
 
 La longitud sin alternativa es alta porque el 100 % de los ejes de un solo
 carril del ámbito son aristas de corte: la Carretera Central a Huancayo, el
 ramal a Paita y los accesos a Chulucanas y Tambo Grande. Sobre la **ruta óptima
-Lima → Piura** (978.3 km, 514 tramos) solo **27 tramos (89.0 km, 9.1 %)** son de
+Lima → Piura** (963.6 km, 591 tramos) solo **27 tramos (89.0 km, 9.2 %)** son de
 corte: son cruces de río y pasos obligados. En el 91 % restante del recorrido el
 vehículo puede rodear un tramo bloqueado, de modo que la acción «tomar alterna»
 tiene efecto medible (encarece la ruta y alarga el recorrido) y no es una acción
@@ -179,8 +182,8 @@ muerta.
 
 | Archivo | Contenido |
 |---|---|
-| `nodos.csv` | 17 833 nodos operativos (ID OSM, lat, lon, grado, tipo) |
-| `tramos.csv` | 28 312 tramos (distancia, tiempo, velocidad, tipo de vía, peaje, `tiene_alterna`) |
+| `nodos.csv` | 18 167 nodos operativos (ID OSM, lat, lon, grado, tipo) |
+| `tramos.csv` | 28 642 tramos (distancia, tiempo, velocidad, tipo de vía, peaje, `sentido`, `restriccion_pesados`, `tiene_alterna`) |
 | `corredor_macro.csv` | Tramos completos entre ciudades |
 | `ciudades.csv` | 8 ciudades con su nodo OSM y desvío de snap |
 | `distribuidores.csv` | 17 distribuidores sobre intersecciones reales |
@@ -198,7 +201,7 @@ topología OSM (no entrena nada):
 
 | Verificación | Resultado |
 |---|---|
-| Red cargada | 17 833 nodos, 28 312 tramos |
+| Red cargada | 18 167 nodos, 28 642 tramos |
 | Episodio | 3 agentes, 240 pasos de 15 min (60 h) |
 | Kilómetros recorridos | 986.8 / 994.9 / 563.1 km por agente |
 | Entregas completadas | 6 de 6, sin pendientes |
@@ -223,8 +226,8 @@ el comportamiento esperado de una política que nunca avanza.
 
 ## 6. Dashboard de la red
 
-`dashboard/index.html` es un visor autocontenido (5.15 MB, sin servidor) con los
-28 312 tramos embebidos. Se regenera con:
+`dashboard/index.html` es un visor autocontenido (5.37 MB, sin servidor) con los
+28 642 tramos embebidos. Se regenera con:
 
 ```bash
 python dashboard/build_dashboard.py
@@ -241,7 +244,7 @@ El botón **GeoJSON** descarga cuatro capas distintas, según lo que se necesite
 
 | Capa | Archivo | Contenido |
 |---|---|---|
-| Red vial completa | `red_vial_ambito_completo.geojson` | 28 312 tramos con todos sus atributos |
+| Red vial completa | `red_vial_ambito_completo.geojson` | 28 642 tramos con sentido de circulación y restricciones |
 | Solo lo filtrado | `red_vial_filtrada.geojson` | los tramos visibles con los filtros activos (incluye los filtros aplicados en el archivo) |
 | Ciudades y distribuidores | `nodos_logisticos.geojson` | 8 ciudades + 17 distribuidores como puntos |
 | Tramos completos | `tramos_completos.geojson` | las 7 rutas macro con su secuencia de tramos |

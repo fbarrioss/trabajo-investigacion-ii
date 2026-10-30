@@ -12,67 +12,67 @@
     "viajes_por_vehiculo_medio": 55.6
   },
   "universo": {
-    "n_tramos": 28312,
-    "km": 14019.6,
-    "tramos_usados": 1687,
-    "pct_tramos_usados": 5.96,
-    "km_usados": 2050.9,
-    "pct_km_usados": 14.63,
-    "tramos_repetidos_media": 163.35,
+    "n_tramos": 28642,
+    "km": 14017.1,
+    "tramos_usados": 1796,
+    "pct_tramos_usados": 6.27,
+    "km_usados": 2074.4,
+    "pct_km_usados": 14.8,
+    "tramos_repetidos_media": 147.43,
     "por_tipo": [
       {
         "tipo": "secondary",
-        "total": 9054,
-        "usados": 280,
-        "pct": 3.1
+        "total": 9159,
+        "usados": 316,
+        "pct": 3.5
       },
       {
         "tipo": "tertiary",
-        "total": 7165,
-        "usados": 105,
-        "pct": 1.5
+        "total": 7344,
+        "usados": 122,
+        "pct": 1.7
       },
       {
         "tipo": "primary",
-        "total": 5878,
-        "usados": 392,
-        "pct": 6.7
+        "total": 5915,
+        "usados": 507,
+        "pct": 8.6
       },
       {
         "tipo": "trunk",
-        "total": 2280,
-        "usados": 649,
-        "pct": 28.5
+        "total": 2283,
+        "usados": 611,
+        "pct": 26.8
       },
       {
         "tipo": "primary_link",
-        "total": 1063,
-        "usados": 8,
-        "pct": 0.8
+        "total": 1064,
+        "usados": 10,
+        "pct": 0.9
       },
       {
         "tipo": "secondary_link",
-        "total": 871,
-        "usados": 5,
-        "pct": 0.6
+        "total": 872,
+        "usados": 3,
+        "pct": 0.3
       },
       {
         "tipo": "trunk_link",
-        "total": 638,
-        "usados": 10,
-        "pct": 1.6
+        "total": 640,
+        "usados": 14,
+        "pct": 2.2
       },
       {
         "tipo": "motorway_link",
-        "total": 562,
-        "usados": 34,
-        "pct": 6.0
+        "total": 564,
+        "usados": 26,
+        "pct": 4.6
       },
       {
         "tipo": "motorway",
         "total": 532,
-        "usados": 204,
-        "pct": 38.3
+        "usados": 187,
+        "pct": 35.2
       },
       {
         "tipo": "tertiary_link",
@@ -83,7 +83,7 @@
     ]
   },
   "verificacion": {
-    "km_medio_recalculado": 830.8,
-    "km_medio_benchmark": 830.8
+    "km_medio_recalculado": 850.6,
+    "km_medio_benchmark": 850.6
   }
 }

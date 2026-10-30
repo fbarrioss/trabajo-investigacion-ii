@@ -352,7 +352,13 @@ def geocodificar(
 
 
 def cargar_grafo(red_dir: Path) -> tuple[nx.DiGraph, pd.DataFrame]:
-    """Construye el grafo dirigido a partir de los CSV de la topología."""
+    """Construye el grafo dirigido a partir de los CSV de la topología.
+
+    Se respeta el sentido de circulación: la arista directa solo se añade si el
+    tramo es recorrible de ini a fin y la inversa solo si lo es de fin a ini.
+    Las columnas ``sentido_*`` no existen en topologías anteriores, en cuyo caso
+    se asume doble sentido (comportamiento histórico).
+    """
     nodos = pd.read_csv(red_dir / "nodos.csv")
     tramos = pd.read_csv(red_dir / "tramos.csv")
 
@@ -366,37 +372,85 @@ def cargar_grafo(red_dir: Path) -> tuple[nx.DiGraph, pd.DataFrame]:
             continue
         peso = float(r.tiempo_flujo_min)
         dist = float(r.distancia_km)
-        G.add_edge(u, v, tiempo=peso, distancia=dist, id_tramo=r.id_tramo)
-        if bool(r.bidireccional):
-            G.add_edge(v, u, tiempo=peso, distancia=dist, id_tramo=r.id_tramo)
+        restringido = bool(getattr(r, "restriccion_pesados", False))
+        directo = bool(getattr(r, "sentido_ini_fin", getattr(r, "bidireccional", True)))
+        inverso = bool(getattr(r, "sentido_fin_ini", getattr(r, "bidireccional", True)))
+        if directo:
+            G.add_edge(u, v, tiempo=peso, distancia=dist, id_tramo=r.id_tramo,
+                       restriccion_pesados=restringido)
+        if inverso:
+            G.add_edge(v, u, tiempo=peso, distancia=dist, id_tramo=r.id_tramo,
+                       restriccion_pesados=restringido)
     return G, nodos
 
 
 def _nodo_mas_cercano(
-    nodos: pd.DataFrame, lat: float, lon: float
+    nodos: pd.DataFrame, lat: float, lon: float, valido: np.ndarray | None = None
 ) -> tuple[int, float]:
-    """Nodo de la red más próximo (haversine) y su distancia en metros."""
+    """Nodo de la red más próximo (haversine) y su distancia en metros.
+
+    ``valido`` restringe los candidatos a un subconjunto de nodos (por ejemplo
+    la componente fuertemente conexa del grafo). Sin ese filtro el punto puede
+    anclarse a un nodo de un bolsillo de un solo sentido: se llega a él pero no
+    se puede salir, y el viaje queda sin ruta.
+    """
     dlat = (nodos["lat"].to_numpy() - lat) * 111.0
     dlon = (nodos["lon"].to_numpy() - lon) * 111.0 * math.cos(math.radians(lat))
     d2 = dlat**2 + dlon**2
+    if valido is not None and valido.any():
+        d2 = np.where(valido, d2, np.inf)
     i = int(np.argmin(d2))
     return int(nodos["id_nodo"].iloc[i]), float(math.sqrt(d2[i]) * 1000.0)
 
 
-def hacer_snapping(puntos: list[Punto], nodos: pd.DataFrame) -> dict[str, int]:
+def nodos_utilizables(G: nx.DiGraph, nodos: pd.DataFrame) -> np.ndarray:
+    """Máscara de nodos que pertenecen a la componente fuertemente conexa mayor.
+
+    Con el sentido de circulación activo, un punto puede caer en un bolsillo de
+    un solo sentido (una calle que entra y no sale). Un vehículo que reparte no
+    puede quedarse atrapado ahí, así que el anclaje se restringe a los nodos
+    desde los que se puede ir y volver.
+    """
+    ids = nodos["id_nodo"].astype("int64").to_numpy()
+    mayor = max(nx.strongly_connected_components(G), key=len)
+    return np.array([int(i) in mayor for i in ids])
+
+
+def hacer_snapping(
+    puntos: list[Punto], nodos: pd.DataFrame, G: nx.DiGraph | None = None
+) -> dict[str, int]:
     """Asigna a cada punto (y al depósito) su nodo de la red.
 
     Devuelve el mapeo ``id_punto -> id_nodo`` y actualiza los campos del punto.
+    Si se pasa ``G``, el anclaje se restringe a la componente fuertemente conexa
+    mayor.
     """
+    valido = nodos_utilizables(G, nodos) if G is not None else None
+    if valido is not None:
+        n_fuera = int((~valido).sum())
+        if n_fuera:
+            print(f"      nodos fuera de la componente principal: {n_fuera:,}")
+
     mapeo: dict[str, int] = {}
+    desplazados: list[tuple[str, float]] = []
     for p in puntos:
         nodo, dist_m = _nodo_mas_cercano(nodos, p.lat_geo, p.lon_geo)
+        if valido is not None:
+            nodo_v, dist_v = _nodo_mas_cercano(nodos, p.lat_geo, p.lon_geo, valido)
+            if nodo_v != nodo:
+                desplazados.append((p.codigo, dist_v - dist_m))
+            nodo, dist_m = nodo_v, dist_v
         p.nodo_snap = nodo
         p.dist_snap_m = dist_m
         p.fuera_cobertura = dist_m > TOLERANCIA_SNAP_M
         mapeo[str(p.id_punto)] = nodo
 
-    nodo, dist_m = _nodo_mas_cercano(nodos, ORIGEN_LAT, ORIGEN_LON)
+    if desplazados:
+        print("      puntos reanclados a la componente principal:")
+        for cod, extra in desplazados:
+            print(f"        - {cod}: +{extra:.0f} m")
+
+    nodo, dist_m = _nodo_mas_cercano(nodos, ORIGEN_LAT, ORIGEN_LON, valido)
     mapeo[ORIGEN_ID] = nodo
     # El origen se guarda como un Punto virtual en el mapeo; su distancia se
     # reporta por separado en el resumen.

@@ -646,6 +646,18 @@
         esperar; el resto sí admite replanificación. Esa distinción es la que hace que «tomar alterna»
         y «esperar» tengan consecuencias distintas y aprendibles.
       </div>
+
+      <div class="nota warn">
+        <b>Sentido de circulación y restricciones de pesados.</b> Hasta ahora todo tramo se modelaba
+        como doble vía: el atributo <code>bidireccional</code> estaba fijado en <code>true</code> y la
+        etiqueta <code>oneway</code> de OSM nunca se leía, de modo que el grafo tenía una arista por
+        sentido en los 28 642 tramos. Hoy el sentido se deriva de las aristas dirigidas de OSM y el
+        grafo solo crea la arista inversa cuando el tramo es realmente recorrible en ese sentido.
+        En paralelo se incorporan <code>hgv</code>, <code>maxweight</code>, <code>maxheight</code>,
+        <code>maxwidth</code> y <code>maxlength</code>: los tramos vetados a camión no se bloquean
+        —la red se partiría donde no hay desvío legal— pero el planificador los penaliza con un
+        multiplicador de tiempo.
+      </div>
     </div>
 
     <!-- ---------- 2 ---------- -->
@@ -906,6 +918,7 @@
   "use strict";
   const D = JSON.parse(document.getElementById('datos').textContent);
   const TIPOS = D.tipos, ZONAS = D.zonas, NOMBRES = D.nombres, TR = D.tramos;
+  const SENTIDOS = D.sentidos || ['doble', 'ini_fin', 'fin_ini'];
 
   const COLOR = {
     motorway:'#b91c1c', trunk:'#dc2626', primary:'#ea580c',
@@ -1526,6 +1539,10 @@
     tarjeta(nf(RED.n_tramos || D.meta.n_tramos), 'Tramos', 'aristas entre esos nodos') +
     tarjeta(nf(Math.round(RED.km || D.meta.km)), 'km de red', 'geometría real de OSM') +
     tarjeta((RED.alterna_pct || 0).toFixed(1) + ' %', 'Con desvío real', 'el resto son aristas de corte') +
+    tarjeta((RED.unidireccional_pct || 0).toFixed(1) + ' %', 'Unidireccionales',
+      nf(RED.unidireccionales || 0) + ' tramos con un solo sentido') +
+    tarjeta(nf(RED.restringidos || 0), 'Restricción de pesados',
+      nf(RED.km_restringidos || 0) + ' km vedados a camión') +
     tarjeta(ACC.n_acciones || '—', 'Acciones', 'discretas y excluyentes') +
     tarjeta(ACC.dim_obs || '—', 'Dimensiones', 'observación local por vehículo')
   );
@@ -1594,7 +1611,7 @@
     tarjeta(nf(UNI.tramos_usados || 0), 'Tramos recorridos', (UNI.pct_tramos_usados || 0) +
       ' % del universo') +
     tarjeta(nf(Math.round(UNI.km_usados || 0)), 'km recorridos', (UNI.pct_km_usados || 0) +
-      ' % de los 14 020 km') +
+      ' % de los ' + nf(D.meta.km) + ' km') +
     tarjeta(nf(Math.round(UNI.tramos_repetidos_media || 0)), 'Usos por tramo', 'cuántas veces pasa la flota')
   );
 
@@ -1688,7 +1705,8 @@
   }
 
   function propsTramo(tr){
-    return {
+    const sentido = SENTIDOS[tr.s || 0] || 'doble';
+    const p = {
       id_tramo: tr.i,
       tipo_via: TIPOS[tr.t],
       distancia_km: tr.d,
@@ -1697,8 +1715,16 @@
       peaje: tr.p === 1,
       tiene_alterna: tr.a === 1,
       zona: ZONAS[tr.z],
-      nombre_via: tr.n >= 0 ? NOMBRES[tr.n] : null
+      nombre_via: tr.n >= 0 ? NOMBRES[tr.n] : null,
+      sentido: sentido,
+      oneway: sentido === 'doble' ? 'no' : 'yes'
     };
+    if (tr.h === 1){
+      p.restriccion_pesados = true;
+      if (tr.w != null) p.peso_max_t = tr.w;
+      if (tr.g != null) p.alto_max_m = tr.g;
+    }
+    return p;
   }
 
   function coleccion(nombre, feats, extra){

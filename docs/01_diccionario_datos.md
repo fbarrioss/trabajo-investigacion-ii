@@ -63,7 +63,13 @@ responden 500/504 por agotamiento de memoria. La unión de igualdades
 | `nombre_via` | string | Hasta 3 nombres OSM de la vía (`"Panamericana Norte / PE-1N"`) |
 | `peaje` | bool | Si alguna arista del tramo está marcada como `toll` |
 | `puente` / `tunel` | bool | Si el tramo contiene un puente o túnel |
-| `bidireccional` | bool | Si se modela en ambos sentidos (por defecto `true`) |
+| `sentido` | enum | `doble` \| `ini_fin` \| `fin_ini`. Se deriva de las aristas **dirigidas** de OSM, no de un supuesto |
+| `sentido_ini_fin` / `sentido_fin_ini` | bool | Banderas por sentido; al menos una es `true`. El grafo solo crea la arista inversa si su bandera lo permite |
+| `bidireccional` | bool | `true` solo si el tramo es recorrible en ambos sentidos (hoy 5 075 de 28 642) |
+| `acceso_hgv` | enum | Restricción de pesados de OSM: `no` \| `designated` \| `destination` \| vacío. Valores corruptos como `"no\|\|"` se normalizan a `no` |
+| `peso_max_t` / `alto_max_m` / `ancho_max_m` / `largo_max_m` | float | Límites de `maxweight` / `maxheight` / `maxwidth` / `maxlength` normalizados a toneladas y metros (vacío = sin dato) |
+| `restriccion_pesados` | bool | `true` si `acceso_hgv = no` o si algún límite queda por debajo de la unidad de referencia (30 t, 4.0 m, 2.6 m, 14.0 m) |
+| `es_micro` | bool | Tramo de menos de 5 m: artefacto de digitalización, no unidad operativa |
 | `es_alternativa` | bool | Reservado (vía paralela sintética); hoy siempre `false` |
 | `tiene_alterna` | bool | `false` solo si el tramo es **arista de corte**: quitarlo desconecta sus extremos, así que no existe ningún desvío que lo rodee. Habilita la acción «tomar vía alterna» (95.4 % de los tramos) |
 | `zona` | string | Ciudad del corredor más cercana al punto medio (`LIM`, `TRU`, …) |
@@ -72,6 +78,19 @@ responden 500/504 por agotamiento de memoria. La unión de igualdades
 de curvatura) y se conservan como extremos los nodos donde realmente se puede
 decidir (grado ≠ 2) más los nodos logísticos. Así un tramo puede abarcar varios
 kilómetros de vía continua con su geometría real.
+
+Tres reglas adicionales cierran los defectos que heredaba la red de OSM:
+
+1. **Lazos descartados.** Una cadena que vuelve al nodo de partida (glorietas,
+   retornos, lazos de doble calzada) producía un tramo con `ini == fin`: un
+   self-loop intransitable que solo inflaba el conteo. Se elimina.
+2. **Corte por cambio de sentido.** Si el sentido cambia en un nodo de grado 2,
+   ese nodo pasa a ser punto de decisión y la cadena se parte ahí. Sin esto el
+   tramo quedaría mitad recorrible en un sentido y mitad en el otro, es decir,
+   intransitable.
+3. **IDs deterministas.** `id_tramo` se asigna al final, ordenando por nodos
+   extremos y distancia. Antes dependía del orden de iteración de un `set` y dos
+   ejecuciones del mismo pipeline podían numerar distinto.
 
 ### 1.3 `corredor_macro.csv` — tramos completos
 
@@ -202,12 +221,12 @@ de OSM. Contrastarla después con OSRM es, por tanto, una prueba independiente:
 
 | Tramo | Red construida | OSRM | Desvío |
 |---|---|---|---|
-| Lima → Trujillo | 545.4 km | 557.1 km | −2.1 % |
-| Trujillo → Chiclayo | 202.8 km | 199.5 km | +1.7 % |
-| Chiclayo → Piura | 212.7 km | 214.7 km | −0.9 % |
-| Piura → Sullana | 39.1 km | 38.8 km | +0.8 % |
-| Piura → Chulucanas | 61.5 km | 60.8 km | +1.2 % |
-| **Total** | **1 061.5 km** | **1 070.9 km** | **−0.9 %** |
+| Lima → Trujillo | 547.6 km | 557.1 km | −1.7 % |
+| Trujillo → Chiclayo | 203.2 km | 199.5 km | +1.9 % |
+| Chiclayo → Piura | 212.8 km | 214.7 km | −0.9 % |
+| Piura → Sullana | 39.3 km | 38.8 km | +1.3 % |
+| Piura → Chulucanas | 61.6 km | 60.8 km | +1.3 % |
+| **Total** | **1 064.5 km** | **1 070.9 km** | **−0.6 %** |
 
 ### 4.2 Rutas alternas
 
@@ -217,13 +236,45 @@ eliminación no desconecta sus extremos):
 
 | Indicador | Valor |
 |---|---|
-| Tramos con desvío disponible | 27 016 / 28 312 (**95.4 %**) |
-| Tramos de corte | 1 296 (4.6 %) |
-| Tramo óptimo Lima → Piura | 978.3 km, 514 tramos |
-| … de los cuales sin alternativa | 27 tramos, 89.0 km (**9.1 %**) |
+| Tramos con desvío disponible | 27 314 / 28 642 (**95.4 %**) |
+| Tramos de corte | 1 328 (4.6 %) |
+| Tramo óptimo Lima → Piura | 963.6 km, 591 tramos |
+| … de los cuales sin alternativa | 27 tramos, 89.0 km (**9.2 %**) |
 
 Los tramos de corte son cruces de río y pasos obligados del corredor; en el 91 %
 restante del recorrido existe un rodeo real.
+
+### 4.3 Sentido de circulación y restricciones de pesados
+
+Hasta la corrección de octubre de 2026 todo tramo se modelaba como doble vía:
+`bidireccional` estaba fijado en `true` y la etiqueta `oneway` de OSM nunca se
+leía. El grafo tenía por tanto una arista por sentido en los 28 642 tramos, y un
+par de calzadas de un solo sentido aparecía como si fuera un desvío.
+
+| Indicador | Valor |
+|---|---|
+| Tramos unidireccionales | **23 567 (82.3 %)** — 12 118 `ini→fin`, 11 449 `fin→ini` |
+| Tramos de doble sentido | 5 075 (17.7 %) |
+| Nodos donde cambia el sentido (cortes de cadena) | 334 |
+| Lazos descartados (`ini == fin`) | 4 |
+| Tramos vetados a camión (`restriccion_pesados`) | **206**, 102.4 km |
+| … de ellos por `hgv=no` | 189 |
+| Micro-tramos (< 5 m) marcados | 154 |
+
+Las restricciones se concentran donde más importan: `secondary` 63, `tertiary`
+57, `primary` 29, `motorway` 28 y `motorway_link` 16. Las vías afectadas de mayor
+jerarquía son las expresas de Lima (Vía Expresa, Av. Javier Prado Este,
+Panamericana Sur, Túnel del Metropolitano), es decir la salida misma del
+corredor. No se bloquean —la red se partiría donde no hay desvío legal— sino que
+el planificador las penaliza con un multiplicador de tiempo
+(`penalizacion_pesados`, 5× por defecto).
+
+**Efecto sobre el anclaje de puntos.** Con el sentido activo aparecen bolsillos
+de un solo sentido: se entra pero no se sale. Uno de los 25 puntos de entrega
+(GEO-006, Trujillo) caía en uno. El snapping se restringe ahora a la componente
+**fuertemente conexa** mayor (17 505 de 18 167 nodos), igual que hace cualquier
+motor de rutas de producción; el punto se reancla 154 m más lejos y los 500
+viajes vuelven a ser enrutables.
 
 ### 4.3 Limitaciones declaradas
 

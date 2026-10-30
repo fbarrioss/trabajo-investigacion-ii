@@ -93,6 +93,9 @@ def main() -> int:
                     help="omite la red urbana de las ciudades")
     ap.add_argument("--recalcular", action="store_true",
                     help="ignora la caché del grafo compuesto")
+    ap.add_argument("--reconstruir", action="store_true",
+                    help="reparsea los .osm y los GraphML cacheados para "
+                         "incorporar etiquetas nuevas (oneway, hgv, maxweight…)")
     ap.add_argument("--nivel", default="tertiary",
                     help="jerarquía vial mínima para la red de carga "
                          "(motorway|trunk|primary|secondary|tertiary|residential)")
@@ -107,11 +110,15 @@ def main() -> int:
         logging.warning(aviso)
 
     # --- 1. Grafo OSM --------------------------------------------------------
-    if CACHE_GRAFO.exists() and not args.recalcular:
+    if CACHE_GRAFO.exists() and not (args.recalcular or args.reconstruir):
         logging.info("Cargando grafo OSM desde caché: %s", CACHE_GRAFO.name)
         G = ox.load_graphml(CACHE_GRAFO)
     else:
-        G = descargar_todo(esc, incluir_urbano=not args.solo_ciudades)
+        G = descargar_todo(
+            esc,
+            incluir_urbano=not args.solo_ciudades,
+            forzar_xml=args.reconstruir,
+        )
 
     if not nx.is_weakly_connected(G):
         mayor = max(nx.weakly_connected_components(G), key=len)
@@ -218,6 +225,31 @@ def main() -> int:
     print("\n  Tipos de vía:")
     for tipo, n in topo.tramos.groupby("tipo_via").size().sort_values(ascending=False).items():
         print(f"    {tipo:<14} {n:>5} tramos")
+
+    print("\n  Sentido de circulación:")
+    for sentido, n in topo.tramos["sentido"].value_counts().items():
+        etiqueta = {
+            "doble": "doble sentido",
+            "ini_fin": "solo ini → fin",
+            "fin_ini": "solo fin → ini",
+        }.get(sentido, sentido)
+        print(f"    {etiqueta:<18} {n:>5} tramos  "
+              f"({topo.tramos.loc[topo.tramos['sentido'] == sentido, 'distancia_km'].sum():>8,.1f} km)")
+
+    restringidos = topo.tramos[topo.tramos["restriccion_pesados"]]
+    print(f"\n  Restricciones de vehículos pesados: {len(restringidos)} tramos "
+          f"({restringidos['distancia_km'].sum():,.1f} km)")
+    if not restringidos.empty:
+        for tipo, n in restringidos.groupby("tipo_via").size().sort_values(ascending=False).items():
+            print(f"    {tipo:<14} {n:>5}")
+        print("    Principales vías restringidas:")
+        for nombre, n in restringidos["nombre_via"].value_counts().head(6).items():
+            if nombre:
+                print(f"      {nombre[:56]:<56} {n:>3}")
+
+    micro = int(topo.tramos["es_micro"].sum())
+    if micro:
+        print(f"\n  Micro-tramos (<5 m, artefactos de digitalización): {micro}")
 
     print("\n  Archivos generados:")
     for k, v in rutas.items():

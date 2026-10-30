@@ -21,6 +21,10 @@ entorno:
   # Regla de jornada del conductor (entidad "jornada_conductor").
   descanso_cada_h: 5.0          # horas de conducción continua antes del descanso
   descanso_min: 45              # duración del descanso obligatorio
+  # Restricciones de vehículos pesados (hgv=no, maxweight, gálibo). El tramo
+  # restringido no se bloquea —la red se partiría donde no hay desvío legal—
+  # pero se penaliza su tiempo para que el planificador prefiera la alternativa.
+  penalizacion_pesados: 5.0     # multiplicador de tiempo en tramos restringidos
 
 recompensa:
   # Pesos calibrados con la jerarquía de prioridades del plan de tesis.

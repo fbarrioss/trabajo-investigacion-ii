@@ -61,7 +61,7 @@ def main() -> int:
     print(f"      {G.number_of_nodes():,} nodos | {G.number_of_edges():,} aristas")
 
     print("\n[5/6] Haciendo snapping de 25 puntos + depósito…")
-    mapeo = hacer_snapping(puntos, nodos)
+    mapeo = hacer_snapping(puntos, nodos, G)
     print(f"      depósito {ORIGEN_ID} → nodo {mapeo[ORIGEN_ID]} "
           f"({mapeo['__origen_dist_m']} m)")
     fuera = [p for p in puntos if p.fuera_cobertura]

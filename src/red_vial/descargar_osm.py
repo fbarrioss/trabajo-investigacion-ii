@@ -43,6 +43,18 @@ log = logging.getLogger(__name__)
 if "toll" not in ox.settings.useful_tags_way:
     ox.settings.useful_tags_way.append("toll")
 
+# Restricciones de vehículos pesados. `oneway` ya viene en `useful_tags_way`
+# desde OSMnx 2.x, pero `hgv`, `maxweight`, `maxheight`, `maxwidth` y
+# `maxlength` no: sin declararlas aquí el perfil de camión se queda sin datos y
+# los tramos donde OSM prohíbe el paso de pesados aparecen como transitables.
+ETIQUETAS_PESADOS = [
+    "hgv", "hgv:conditional", "maxweight", "maxheight",
+    "maxwidth", "maxlength", "access",
+]
+for _etiqueta in ETIQUETAS_PESADOS:
+    if _etiqueta not in ox.settings.useful_tags_way:
+        ox.settings.useful_tags_way.append(_etiqueta)
+
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 USER_AGENT = "tesis-uni-marl-rutas/1.0 (investigacion academica)"
 
@@ -486,19 +498,25 @@ out body;
 def descargar_ciudad(
     lat: float, lon: float, dist_m: int = RADIO_CIUDAD_M,
     cache_dir: Path | None = None, etiqueta: str = "ciudad",
+    forzar_xml: bool = False,
 ) -> nx.MultiDiGraph:
     """Descarga la red urbana completa alrededor de una ciudad.
 
     Usa OverpassQL directo (con rotación de espejos) en lugar de
     ``ox.graph_from_point`` para poder reintentar cuando el endpoint público
     responde 429/502 por saturación.
+
+    ``forzar_xml`` ignora el ``.graphml`` cacheado y vuelve a parsear el ``.osm``
+    original. Es necesario cuando se amplía ``useful_tags_way``: el GraphML
+    guardado antes no contiene las etiquetas nuevas y reutilizarlo dejaría la
+    red sin restricciones de pesados.
     """
     cache_dir = cache_dir or (RAIZ / "data" / "raw" / "osm")
     cache_dir.mkdir(parents=True, exist_ok=True)
     graphml = cache_dir / f"ciudad_{etiqueta}.graphml"
     xml = cache_dir / f"ciudad_{etiqueta}.osm"
 
-    if graphml.exists():
+    if graphml.exists() and not forzar_xml:
         log.info("Usando caché urbana: %s", graphml.name)
         return ox.load_graphml(graphml)
 
@@ -524,8 +542,17 @@ def componer_grafo(grafos: list[nx.MultiDiGraph]) -> nx.MultiDiGraph:
 
 
 # ---------------------------------------------------------------------------
-def descargar_todo(esc: Escenario | None = None, incluir_urbano: bool = True) -> nx.MultiDiGraph:
-    """Descarga y compone la red vial completa del escenario."""
+def descargar_todo(
+    esc: Escenario | None = None,
+    incluir_urbano: bool = True,
+    forzar_xml: bool = False,
+) -> nx.MultiDiGraph:
+    """Descarga y compone la red vial completa del escenario.
+
+    ``forzar_xml`` obliga a reparsear los ``.osm`` cacheados en lugar de
+    reutilizar los ``.graphml``: hace falta cuando se añaden etiquetas nuevas a
+    ``useful_tags_way``, porque los GraphML antiguos no las contienen.
+    """
     esc = esc or Escenario.cargar()
     cache_dir = RAIZ / "data" / "raw" / "osm"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -552,6 +579,7 @@ def descargar_todo(esc: Escenario | None = None, incluir_urbano: bool = True) ->
                     descargar_ciudad(
                         ciudad["lat"], ciudad["lon"], dist_m=dist,
                         cache_dir=cache_dir, etiqueta=ciudad["id"],
+                        forzar_xml=forzar_xml,
                     )
                 )
             except Exception as exc:  # noqa: BLE001

@@ -119,7 +119,17 @@
     "bidireccional",
     "zona",
     "sinuosidad",
-    "riesgo_base"
+    "riesgo_base",
+    "sentido",
+    "sentido_ini_fin",
+    "sentido_fin_ini",
+    "acceso_hgv",
+    "peso_max_t",
+    "alto_max_m",
+    "ancho_max_m",
+    "largo_max_m",
+    "restriccion_pesados",
+    "es_micro"
   ],
   "evento": [
     "id_evento",

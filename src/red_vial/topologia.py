@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,80 @@ JERARQUIA_VIA = {
     "tertiary": 2, "tertiary_link": 1,
     "residential": 1, "unclassified": 1, "service": 0,
 }
+
+# ---------------------------------------------------------------------------
+# Umbrales de la red de carga pesada
+# ---------------------------------------------------------------------------
+# Un tramo se considera **restringido para camión** cuando OSM prohíbe
+# explícitamente el paso de pesados (`hgv=no`) o cuando el límite de peso o de
+# gálibo queda por debajo de la unidad que opera el corredor. La flota de la
+# tesis es de 8–25 t, de modo que un `maxweight` de 30 t o más no la afecta.
+PESO_CAMION_T = 30.0
+ALTO_CAMION_M = 4.0
+ANCHO_CAMION_M = 2.6
+LARGO_CAMION_M = 14.0
+
+# Tramos por debajo de este umbral son artefactos de digitalización (separación
+# de calzadas, cortes en intersecciones) y no unidades operativas reales.
+UMBRAL_MICRO_KM = 0.005
+
+_HGV_VALIDOS = {
+    "yes", "no", "designated", "destination", "delivery", "permissive",
+    "private", "agricultural", "forestry", "unknown",
+}
+_NUMERO_RE = re.compile(r"(\d+(?:[.,]\d+)?)")
+
+
+def _normalizar_hgv(valor: Any) -> str:
+    """Normaliza la etiqueta ``hgv`` de OSM.
+
+    Hay valores corruptos en el extracto (``"no||"``, ``"no|no||"``) que un
+    ``== "no"`` descartaría en silencio y con ellos la restricción: se toma el
+    primer campo antes de la barra y se valida contra el vocabulario de OSM.
+    """
+    s = str(valor if valor is not None else "").split("|")[0].strip().lower()
+    return s if s in _HGV_VALIDOS else ""
+
+
+def _normalizar_medida(valor: Any, unidad_si_kg: bool = False) -> float | None:
+    """Convierte un valor de OSM con unidades libres a número canónico.
+
+    OSM escribe ``maxweight`` como ``"36"``, ``"4 t"`` o ``"60 toneladas"`` y
+    ``maxheight`` como ``"5.5"``, ``"5.5 m"`` o ``"5.10"``. Sin normalizar, la
+    comparación contra la tara o el gálibo del camión no es posible.
+    """
+    if valor is None:
+        return None
+    s = str(valor).strip().lower().replace(",", ".")
+    if not s or s in {"none", "nan", "default"}:
+        return None
+    m = _NUMERO_RE.search(s)
+    if not m:
+        return None
+    num = float(m.group(1))
+    if unidad_si_kg and "kg" in s:
+        num /= 1000.0
+    elif "lb" in s:
+        num *= 0.000453592
+    elif "ft" in s or "'" in s:
+        num *= 0.3048
+    elif "cm" in s:
+        num /= 100.0
+    return round(num, 2)
+
+
+def _num(valor: Any, defecto: float) -> float:
+    """``float`` tolerante a ``None`` y ``NaN`` (GraphML no admite nulos)."""
+    try:
+        v = float(valor)
+    except (TypeError, ValueError):
+        return defecto
+    return defecto if math.isnan(v) else v
+
+
+def _minimo_no_nulo(valores: list[float | None]) -> float | None:
+    validos = [v for v in valores if v is not None]
+    return min(validos) if validos else None
 
 
 @dataclass
@@ -66,12 +141,28 @@ class Topologia:
         return self.nodos[self.nodos["tipo"] == "hub"]
 
     def resumen(self) -> dict[str, Any]:
+        t = self.tramos
+        unidireccionales = (
+            int((~t["bidireccional"]).sum()) if "bidireccional" in t.columns else 0
+        )
+        restringidos = (
+            int(t["restriccion_pesados"].sum()) if "restriccion_pesados" in t.columns else 0
+        )
         return {
             "n_nodos": int(len(self.nodos)),
-            "n_tramos": int(len(self.tramos)),
-            "km_totales": round(float(self.tramos["distancia_km"].sum()), 1),
+            "n_tramos": int(len(t)),
+            "km_totales": round(float(t["distancia_km"].sum()), 1),
             "n_decision": int(self.nodos["es_decision"].sum()),
             "n_distribuidores": int((self.nodos["tipo"] == "distribuidor").sum()),
+            "n_unidireccionales": unidireccionales,
+            "n_bidireccionales": int(len(t)) - unidireccionales,
+            "n_restriccion_pesados": restringidos,
+            "km_restriccion_pesados": round(
+                float(t.loc[t["restriccion_pesados"], "distancia_km"].sum()), 1
+            ) if "restriccion_pesados" in t.columns else 0.0,
+            "n_micro_tramos": (
+                int(t["es_micro"].sum()) if "es_micro" in t.columns else 0
+            ),
             "conectado": nx.is_weakly_connected(self.grafo),
             **self.metadatos,
         }
@@ -96,6 +187,12 @@ def _atributos_arista(d: dict[str, Any]) -> dict[str, Any]:
         "puente": bool(d.get("bridge", False)),
         "tunel": bool(d.get("tunnel", False)),
         "peaje": bool(d.get("toll", False)),
+        # --- restricciones de vehículos pesados -----------------------------
+        "hgv": _normalizar_hgv(d.get("hgv")),
+        "peso_max_t": _normalizar_medida(d.get("maxweight"), unidad_si_kg=True),
+        "alto_max_m": _normalizar_medida(d.get("maxheight")),
+        "ancho_max_m": _normalizar_medida(d.get("maxwidth")),
+        "largo_max_m": _normalizar_medida(d.get("maxlength")),
     }
 
 
@@ -121,6 +218,11 @@ def grafo_no_dirigido_agregado(G: nx.MultiDiGraph) -> nx.Graph:
     contraerían por error. Por eso se agrega por par no ordenado tomando la
     longitud/tiempo **mínimo** (es la misma vía física) y acumulando los
     atributos descriptivos.
+
+    El conjunto ``_dirs`` guarda los pares **dirigidos** que realmente existen
+    en el grafo OSM. Es la única fuente fiable del sentido de circulación: una
+    calzada de un solo sentido aparece con ``(u, v)`` pero sin ``(v, u)``, y
+    tras el colapso a grafo no dirigido esa información se perdería.
     """
     H = nx.Graph()
     H.add_nodes_from(G.nodes(data=True))
@@ -139,6 +241,12 @@ def grafo_no_dirigido_agregado(G: nx.MultiDiGraph) -> nx.Graph:
             prev["peaje"] = prev["peaje"] or a["peaje"]
             prev["puente"] = prev["puente"] or a["puente"]
             prev["tunel"] = prev["tunel"] or a["tunel"]
+            prev["_dirs"].add((u, v))
+            prev["_hgv"].add(a["hgv"])
+            prev["_peso_max_t"].append(a["peso_max_t"])
+            prev["_alto_max_m"].append(a["alto_max_m"])
+            prev["_ancho_max_m"].append(a["ancho_max_m"])
+            prev["_largo_max_m"].append(a["largo_max_m"])
         else:
             H.add_edge(
                 u, v,
@@ -146,8 +254,42 @@ def grafo_no_dirigido_agregado(G: nx.MultiDiGraph) -> nx.Graph:
                 peaje=a["peaje"], puente=a["puente"], tunel=a["tunel"],
                 _vias=[a["via"]],
                 _nombres={a["nombre"]} if a["nombre"] else set(),
+                _dirs={(u, v)},
+                _hgv={a["hgv"]} if a["hgv"] else set(),
+                _peso_max_t=[a["peso_max_t"]],
+                _alto_max_m=[a["alto_max_m"]],
+                _ancho_max_m=[a["ancho_max_m"]],
+                _largo_max_m=[a["largo_max_m"]],
             )
     return H
+
+
+def _nodos_cambio_sentido(
+    H: nx.Graph, decisiones: set[Any]
+) -> set[Any]:
+    """Nodos de grado 2 donde el sentido de circulación cambia.
+
+    Si una calle de doble sentido se convierte en un solo sentido sin que haya
+    una intersección, el nodo de transición tiene grado 2 y la contracción lo
+    borraría: el tramo resultante quedaría mitad recorrible en un sentido y
+    mitad en el otro, es decir, intransitable en ambos. Tratarlo como nodo de
+    decisión parte la cadena justo donde corresponde.
+    """
+    cambios: set[Any] = set()
+    for n in H.nodes:
+        if n in decisiones or H.degree(n) != 2:
+            continue
+        vecinos = list(H.neighbors(n))
+        if len(vecinos) != 2:
+            continue
+        a, b = vecinos
+        dirs_a = H[a][n]["_dirs"]
+        dirs_b = H[n][b]["_dirs"]
+        patron_a = ((a, n) in dirs_a, (n, a) in dirs_a)
+        patron_b = ((n, b) in dirs_b, (b, n) in dirs_b)
+        if patron_a != patron_b:
+            cambios.add(n)
+    return cambios
 
 
 def filtrar_red_carga(
@@ -194,18 +336,38 @@ def filtrar_red_carga(
 def consolidar_tramos(
     G: nx.MultiDiGraph, nodos_logisticos: set[Any]
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Contrae cadenas de grado 2 y devuelve (nodos, tramos)."""
+    """Contrae cadenas de grado 2 y devuelve (nodos, tramos).
+
+    Además de la contracción, aquí se resuelven los tres defectos que la red
+    heredaba de OSM y que el asesor detectó sobre el GeoJSON:
+
+    * **lazos**: una cadena que vuelve al nodo de partida (glorietas, retornos,
+      lazos de doble calzada) producía un tramo con ``ini == fin``, es decir un
+      self-loop intransitable que solo inflaba el conteo. Se descarta.
+    * **sentido**: cada tramo guarda si es recorrible de ini a fin, de fin a
+      ini, o en ambos sentidos, a partir de las aristas dirigidas de OSM.
+    * **restricciones de pesados**: se agregan ``hgv``, ``maxweight``,
+      ``maxheight``, ``maxwidth`` y ``maxlength`` de toda la cadena.
+    """
     H = grafo_no_dirigido_agregado(G)
     log.info("Consolidando topología sobre %d nodos...", H.number_of_nodes())
 
     grado = dict(H.degree())
     decisiones = {n for n in H.nodes if grado.get(n, 0) != 2 or n in nodos_logisticos}
+    cambios = _nodos_cambio_sentido(H, decisiones)
+    if cambios:
+        log.info("Nodos donde cambia el sentido de circulación: %d", len(cambios))
+    decisiones |= cambios
+
+    def _orden(n: Any) -> tuple[int, Any]:
+        return (0, n) if isinstance(n, int) else (1, str(n))
 
     tramos: list[dict[str, Any]] = []
     visitadas: set[frozenset] = set()
-    contador = 0
+    n_lazos = 0
+    n_intransitables = 0
 
-    for origen in decisiones:
+    for origen in sorted(decisiones, key=_orden):
         for vecino in H.neighbors(origen):
             if vecino == origen:
                 continue
@@ -214,6 +376,7 @@ def consolidar_tramos(
                 continue
 
             aristas: list[dict[str, Any]] = [H[origen][vecino]]
+            pares_traza: list[tuple[Any, Any]] = [(origen, vecino)]
             visitadas.add(clave)
 
             camino_nodos = [origen, vecino]
@@ -228,6 +391,7 @@ def consolidar_tramos(
                 if siguiente is None:
                     break
                 aristas.append(H[actual][siguiente])
+                pares_traza.append((actual, siguiente))
                 visitadas.add(frozenset((actual, siguiente)))
                 camino_nodos.append(siguiente)
                 anterior, actual = actual, siguiente
@@ -235,6 +399,11 @@ def consolidar_tramos(
                     break
 
             if len(camino_nodos) < 2:
+                continue
+
+            # Lazo cerrado: la cadena regresa al punto de partida.
+            if actual == origen:
+                n_lazos += 1
                 continue
 
             largo_m = sum(a["largo_m"] for a in aristas)
@@ -262,10 +431,59 @@ def consolidar_tramos(
             t_min = round(max(tiempo_s, 0.006) / 60.0, 4)
             vel_kmh = round(dist_km / (t_min / 60.0), 1) if t_min > 0 else 0.0
 
-            contador += 1
+            # --- Sentido de circulación -------------------------------------
+            ini_fin = all(
+                par in aristas[i]["_dirs"] for i, par in enumerate(pares_traza)
+            )
+            fin_ini = all(
+                (b, a) in aristas[i]["_dirs"]
+                for i, (a, b) in enumerate(pares_traza)
+            )
+            if not ini_fin and not fin_ini:
+                # Patrón mixto sin nodo de corte: no debería ocurrir tras
+                # `_nodos_cambio_sentido`, pero si ocurre el tramo no es
+                # recorrible en ningún sentido y no debe entrar al grafo.
+                n_intransitables += 1
+                continue
+            if ini_fin and fin_ini:
+                sentido = "doble"
+            elif ini_fin:
+                sentido = "ini_fin"
+            else:
+                sentido = "fin_ini"
+
+            # --- Restricciones de vehículos pesados -------------------------
+            hgv: set[str] = set()
+            for a in aristas:
+                hgv |= a.get("_hgv", set())
+            peso_max = _minimo_no_nulo(
+                [v for a in aristas for v in a.get("_peso_max_t", [])]
+            )
+            alto_max = _minimo_no_nulo(
+                [v for a in aristas for v in a.get("_alto_max_m", [])]
+            )
+            ancho_max = _minimo_no_nulo(
+                [v for a in aristas for v in a.get("_ancho_max_m", [])]
+            )
+            largo_max = _minimo_no_nulo(
+                [v for a in aristas for v in a.get("_largo_max_m", [])]
+            )
+            acceso_hgv = (
+                "no" if "no" in hgv
+                else "designated" if "designated" in hgv
+                else sorted(hgv)[0] if hgv
+                else ""
+            )
+            restringido = bool(
+                acceso_hgv == "no"
+                or (peso_max is not None and peso_max < PESO_CAMION_T)
+                or (alto_max is not None and alto_max < ALTO_CAMION_M)
+                or (ancho_max is not None and ancho_max < ANCHO_CAMION_M)
+                or (largo_max is not None and largo_max < LARGO_CAMION_M)
+            )
+
             tramos.append(
                 {
-                    "id_tramo": f"TR-{contador:05d}",
                     "id_nodo_ini": origen,
                     "id_nodo_fin": actual,
                     "n_nodos_geometria": len(camino_nodos),
@@ -278,12 +496,44 @@ def consolidar_tramos(
                     "peaje": any(a["peaje"] for a in aristas),
                     "puente": any(a["puente"] for a in aristas),
                     "tunel": any(a["tunel"] for a in aristas),
-                    "bidireccional": True,
+                    "sentido": sentido,
+                    "sentido_ini_fin": bool(ini_fin),
+                    "sentido_fin_ini": bool(fin_ini),
+                    "bidireccional": bool(ini_fin and fin_ini),
+                    "acceso_hgv": acceso_hgv,
+                    "peso_max_t": peso_max,
+                    "alto_max_m": alto_max,
+                    "ancho_max_m": ancho_max,
+                    "largo_max_m": largo_max,
+                    "restriccion_pesados": restringido,
+                    "es_micro": bool(dist_km < UMBRAL_MICRO_KM),
                 }
             )
 
     tramos_df = pd.DataFrame(tramos)
-    log.info("Tramos consolidados: %d", len(tramos_df))
+    # Los IDs se asignan al final y en orden determinista: antes dependían del
+    # orden de iteración de un `set` de nodos, de modo que dos ejecuciones del
+    # mismo pipeline podían numerar distinto.
+    if not tramos_df.empty:
+        tramos_df = tramos_df.sort_values(
+            ["id_nodo_ini", "id_nodo_fin", "distancia_km"], kind="stable"
+        ).reset_index(drop=True)
+        tramos_df.insert(
+            0, "id_tramo", [f"TR-{i:05d}" for i in range(1, len(tramos_df) + 1)]
+        )
+    log.info(
+        "Tramos consolidados: %d (lazos descartados: %d, intransitables: %d)",
+        len(tramos_df), n_lazos, n_intransitables,
+    )
+    if not tramos_df.empty:
+        log.info(
+            "  sentido: doble %d, solo ini→fin %d, solo fin→ini %d; "
+            "restricción de pesados en %d tramos",
+            int((tramos_df["sentido"] == "doble").sum()),
+            int((tramos_df["sentido"] == "ini_fin").sum()),
+            int((tramos_df["sentido"] == "fin_ini").sum()),
+            int(tramos_df["restriccion_pesados"].sum()),
+        )
 
     # --- Nodos --------------------------------------------------------------
     filas = []
@@ -406,22 +656,31 @@ def seleccionar_distribuidores(
 
 # ---------------------------------------------------------------------------
 def construir_grafo_consolidado(tramos: pd.DataFrame) -> nx.MultiDiGraph:
-    """Grafo dirigido con una arista por sentido a partir de los tramos."""
+    """Grafo dirigido con una arista por sentido **permitido**.
+
+    A diferencia de la versión anterior, la arista inversa solo se crea si el
+    tramo es recorrible en ese sentido: las calzadas de un solo sentido de OSM
+    dejan de aparecer como doble vía. Los atributos de restricción viajan con
+    la arista para que el planificador pueda evitarlas.
+    """
     G = nx.MultiDiGraph()
     for t in tramos.itertuples(index=False):
-        G.add_edge(
-            t.id_nodo_ini, t.id_nodo_fin, key=t.id_tramo,
-            id_tramo=t.id_tramo, distancia_km=float(t.distancia_km),
-            tiempo_flujo_min=float(t.tiempo_flujo_min), tipo_via=t.tipo_via,
-            peaje=bool(t.peaje), reversa=False,
-        )
-        if bool(t.bidireccional):
-            G.add_edge(
-                t.id_nodo_fin, t.id_nodo_ini, key=f"{t.id_tramo}_R",
-                id_tramo=t.id_tramo, distancia_km=float(t.distancia_km),
-                tiempo_flujo_min=float(t.tiempo_flujo_min), tipo_via=t.tipo_via,
-                peaje=bool(t.peaje), reversa=True,
-            )
+        comunes = {
+            "id_tramo": t.id_tramo,
+            "distancia_km": float(t.distancia_km),
+            "tiempo_flujo_min": float(t.tiempo_flujo_min),
+            "tipo_via": t.tipo_via,
+            "peaje": bool(t.peaje),
+            "restriccion_pesados": bool(getattr(t, "restriccion_pesados", False)),
+            "peso_max_t": _num(getattr(t, "peso_max_t", None), -1.0),
+            "alto_max_m": _num(getattr(t, "alto_max_m", None), -1.0),
+        }
+        if bool(getattr(t, "sentido_ini_fin", True)):
+            G.add_edge(t.id_nodo_ini, t.id_nodo_fin, key=t.id_tramo,
+                       reversa=False, **comunes)
+        if bool(getattr(t, "sentido_fin_ini", True)):
+            G.add_edge(t.id_nodo_fin, t.id_nodo_ini, key=f"{t.id_tramo}_R",
+                       reversa=True, **comunes)
     return G
 
 

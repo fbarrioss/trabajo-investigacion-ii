@@ -99,34 +99,36 @@ python scripts/06_integrar_viajes.py        # benchmark
 | Indicador | Antes (solo corredor norte) | Ahora (cobertura completa) |
 |---|---|---|
 | Nodos OSM procesados | 248 723 | **339 863** |
-| Nodos operativos | 13 918 | **17 833** |
-| Nodos de decisión | 13 905 | **17 806** |
-| Tramos | 21 918 | **28 312** |
-| Longitud total | 10 547.9 km | **14 019.6 km** |
+| Nodos operativos | 13 918 | **18 167** |
+| Nodos de decisión | 13 905 | **18 140** |
+| Tramos | 21 918 | **28 642** |
+| Longitud total | 10 547.9 km | **14 017.1 km** |
 | Ciudades | 6 | **8** (Huancayo y Paita como zonas de extensión) |
 | Distribuidores | 17 | **17** (sin cambios) |
 | Conexo | sí | **sí** |
 | Completitud | 100 % | **100 %** |
 | Tramos con desvío alterno | 94.9 % | **95.4 %** |
+| Tramos unidireccionales | — | **82.3 %** (23 567) |
+| Tramos con restricción de pesados | — | **206** (102.4 km) |
 
 Los macro-tramos del corredor declarado **no cambian**, porque las zonas nuevas
 no alteran la ruta óptima entre las seis ciudades del plan de tesis:
 
 | Macro-tramo | Distancia | Tiempo |
 |---|---|---|
-| Lima → Trujillo | 545.4 km | 7.6 h |
-| Trujillo → Chiclayo | 202.8 km | 2.7 h |
-| Chiclayo → Piura | 212.7 km | 2.4 h |
-| Piura → Sullana | 39.1 km | 0.5 h |
-| Piura → Chulucanas | 61.5 km | 0.7 h |
-| **Total** | **1 061.5 km** | **13.9 h** |
+| Lima → Trujillo | 547.6 km | 7.7 h |
+| Trujillo → Chiclayo | 203.2 km | 2.8 h |
+| Chiclayo → Piura | 212.8 km | 2.4 h |
+| Piura → Sullana | 39.3 km | 0.5 h |
+| Piura → Chulucanas | 61.6 km | 0.7 h |
+| **Total** | **1 064.5 km** | **14.0 h** |
 
 ### 4.1 Nuevas conexiones verificadas
 
 | Par | Distancia por red | Tiempo | Referencia |
 |---|---|---|---|
-| Lima → Huancayo | **303.3 km** | 5.2 h | ~300 km, 5–6 h por la Carretera Central |
-| Piura → Paita | **57.7 km** | 0.6 h | ~57 km por la PE-1N |
+| Lima → Huancayo | **303.4 km** | 5.2 h | ~300 km, 5–6 h por la Carretera Central |
+| Piura → Paita | **57.8 km** | 0.7 h | ~57 km por la PE-1N |
 
 ### 4.2 Tramos completos de las extensiones
 
@@ -134,12 +136,12 @@ Los dos pares anteriores se reportan como macro-tramos propios, con
 `alcance: extension`, para no alterar el total del corredor declarado en la
 tesis. `corredor_macro.csv` pasa de 5 a 7 filas y ahora guarda la **secuencia
 completa** de tramos (antes se truncaba a 200, de modo que Lima → Trujillo
-—352 tramos— se dibujaba solo hasta la mitad).
+—339 tramos— se dibujaba solo hasta la mitad).
 
 | Grupo | Rutas | Distancia | Tiempo |
 |---|---|---|---|
-| Corredor | 5 | 1 061.5 km | 13.9 h |
-| Extensiones | 2 | 361.0 km | 5.8 h |
+| Corredor | 5 | 1 064.5 km | 14.0 h |
+| Extensiones | 2 | 361.2 km | 5.8 h |
 
 El dashboard refleja esa separación: el panel «Tramos completos» agrupa las
 rutas en *Corredor norte* y *Zonas de extensión* con su subtotal, y el botón
@@ -154,16 +156,19 @@ tramos completos).
 | Viajes reconstruidos | 313 de 500 (62.6 %) | **500 de 500 (100 %)** |
 | Viajes con error de ruta | 0 | **0** |
 | Snap del CEDI | 12 239 m | **368 m** |
-| Snap medio de los 25 puntos | 1 890 m | **242 m** (mediana 116 m) |
+| Snap medio de los 25 puntos | 1 890 m | **247 m** (mediana 116 m) |
 | Snap máximo | 176 642 m | **1 194.5 m** (GEO-010, Trujillo) |
-| Km medio por red | 890.4 km | **830.8 km** |
+| Km medio por red | 890.4 km | **850.6 km** |
 | Km medio geodésico | 783.7 km | **704.2 km** |
-| Ratio red / geodésica | 1.136 | **1.18** |
-| Duración media | 661.5 min | **628 min (10.5 h)** |
+| Ratio red / geodésica | 1.136 | **1.21** |
+| Duración media | 661.5 min | **663 min (11.1 h)** |
 
-El ratio red/geodésica sube de 1.136 a 1.18 porque ahora entran los viajes a
+El ratio red/geodésica sube de 1.136 a 1.21 por dos razones. Primero, ahora
+entran los viajes a
 Huancayo, que recorren la Carretera Central: una vía de montaña con sinuosidad
-muy superior a la Panamericana. Por parada, la distribución queda en
+muy superior a la Panamericana. Segundo, al respetar el sentido de circulación
+los recorridos dejan de atajar por calzadas en sentido contrario. Por parada, la
+distribución queda en
 **mediana 1.15** y percentil 75 de 1.21, sin valores atípicos por encima de 2.5
 salvo los tramos urbanos de un solo sentido.
 

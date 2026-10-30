@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 
 import matplotlib
@@ -77,10 +78,66 @@ def _coordenadas_str(topo: Topologia) -> dict[str, tuple[float, float]]:
     return {str(k): v for k, v in base.items()}
 
 
+def _propiedades_tramo(t: Any) -> dict[str, Any]:
+    """Propiedades que acompañan a cada LineString del GeoJSON.
+
+    Se exportan los atributos que un SIG necesita para trabajar con la red sin
+    volver a los CSV: jerarquía y nombre de la vía, sentido de circulación,
+    disponibilidad de desvío y restricciones de vehículos pesados. Los valores
+    desconocidos se omiten en lugar de escribirse como ``NaN`` (que no es JSON
+    válido y rompe cualquier lector estricto).
+    """
+    sentido = str(getattr(t, "sentido", "doble"))
+    props: dict[str, Any] = {
+        "id_tramo": t.id_tramo,
+        "tipo_via": t.tipo_via,
+        "nombre_via": str(getattr(t, "nombre_via", "") or ""),
+        "distancia_km": float(t.distancia_km),
+        "tiempo_flujo_min": float(t.tiempo_flujo_min),
+        "velocidad_kmh": float(getattr(t, "velocidad_flujo_kmh", 0.0)),
+        "peaje": bool(t.peaje),
+        "puente": bool(getattr(t, "puente", False)),
+        "tunel": bool(getattr(t, "tunel", False)),
+        # ``oneway`` en la convención de OSM: yes / no.
+        "oneway": "no" if sentido == "doble" else "yes",
+        "sentido": sentido,
+        "tiene_alterna": bool(getattr(t, "tiene_alterna", True)),
+        "zona": str(getattr(t, "zona", "") or ""),
+    }
+    if bool(getattr(t, "restriccion_pesados", False)):
+        props["restriccion_pesados"] = True
+    acceso = str(getattr(t, "acceso_hgv", "") or "")
+    if acceso:
+        props["acceso_hgv"] = acceso
+    for campo, clave in (
+        ("peso_max_t", "peso_max_t"),
+        ("alto_max_m", "alto_max_m"),
+        ("ancho_max_m", "ancho_max_m"),
+        ("largo_max_m", "largo_max_m"),
+    ):
+        valor = getattr(t, campo, None)
+        try:
+            if valor is not None and not (isinstance(valor, float) and math.isnan(valor)):
+                props[clave] = float(valor)
+        except (TypeError, ValueError):
+            continue
+    return props
+
+
 def exportar_geojson(topo: Topologia, destino: str | Path) -> Path:
     """Exporta los tramos consolidados como LineString GeoJSON."""
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
+
+    # `camino_nodos` se omite del CSV por tamaño, así que una topología
+    # recargada desde disco ya no puede reconstruir la traza real: el GeoJSON
+    # saldría con una recta entre extremos y el mapa perdería las curvas. Solo
+    # se puede exportar con geometría completa desde la topología en memoria.
+    if "camino_nodos" not in topo.tramos.columns:
+        log.warning(
+            "La topología no conserva 'camino_nodos': el GeoJSON se generará con "
+            "una recta por tramo. Exporta desde scripts/01_red_vial.py."
+        )
 
     coords = _coordenadas_str(topo)
 
@@ -100,18 +157,17 @@ def exportar_geojson(topo: Topologia, destino: str | Path) -> Path:
             {
                 "type": "Feature",
                 "geometry": {"type": "LineString", "coordinates": puntos},
-                "properties": {
-                    "id_tramo": t.id_tramo,
-                    "distancia_km": t.distancia_km,
-                    "tiempo_flujo_min": t.tiempo_flujo_min,
-                    "tipo_via": t.tipo_via,
-                    "peaje": bool(t.peaje),
-                },
+                "properties": _propiedades_tramo(t),
             }
         )
 
     coleccion = {"type": "FeatureCollection", "features": features}
-    destino.write_text(json.dumps(coleccion, ensure_ascii=False), encoding="utf-8")
+    # Sin espacios: con 28 600 features las propiedades nuevas duplicaban el
+    # peso del archivo y el GeoJSON se descarga desde el dashboard.
+    destino.write_text(
+        json.dumps(coleccion, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
     log.info("GeoJSON exportado: %d tramos", len(features))
     return destino
 

@@ -1,7 +1,7 @@
 # Integración de viajes reales → red vial (benchmark MARL)
 
 Este documento describe cómo se encajaron los **500 viajes registrados** de la
-empresa sobre el **universo de tramos** (28 312 tramos) y qué limitaciones
+empresa sobre el **universo de tramos** (28 642 tramos) y qué limitaciones
 quedan pendientes.
 
 ## 1. Fuentes
@@ -10,7 +10,7 @@ quedan pendientes.
 |---|---|---|
 | `EYM_V5_Viajes_Puntos_Entrega_Secuencias.xlsx` | `PUNTOS_POR_VIAJE` (paradas), `RESUMEN_VIAJES` (viajes), `NOTAS_Y_VALIDACION` | 1 982 / 500 / 13 |
 | `puntos_entrega.xlsx` | Catálogo de 25 puntos de entrega | 25 |
-| `data/processed/red_vial/` | Topología OSM con cobertura completa | 17 833 nodos, 28 312 tramos |
+| `data/processed/red_vial/` | Topología OSM con cobertura completa | 18 167 nodos, 28 642 tramos |
 
 Depósito (origen): **−12.2302778, −76.9655556** (sur de Lima).
 
@@ -59,9 +59,9 @@ tiempo **por red**, no geodésico.
 | Indicador | Valor |
 |---|---|
 | Viajes válidos | **500** de 500 (100 %) |
-| Km medio por red | **830.8 km** |
+| Km medio por red | **850.6 km** |
 | Km medio geodésico | 704.2 km |
-| Ratio red/geodésica | **1.18** (mediana por parada 1.15) |
+| Ratio red/geodésica | **1.21** (mediana por parada 1.15) |
 | Duración media | 628 min (10.5 h) |
 | Paradas medias | 3.96 |
 
@@ -88,9 +88,9 @@ invalida el benchmark, pero obliga a declarar qué se tiene y qué no. Medido co
 | Ritmo | 2.05 viajes por día con actividad |
 | Flota | 9 vehículos (≈ 56 viajes por unidad) |
 | Puntos de entrega | 25 |
-| Tramos recorridos | **1 687 de 28 312 (6.0 %)** |
-| Kilómetros recorridos | **2 050.9 de 14 019.6 (14.6 %)** |
-| Reutilización | 163 viajes por tramo usado (mediana del tramo activo) |
+| Tramos recorridos | **1 796 de 28 642 (6.3 %)** |
+| Kilómetros recorridos | **2 074.4 de 14 017.1 (14.8 %)** |
+| Reutilización | 147 viajes por tramo usado (media del tramo activo) |
 
 La lectura correcta de ese 6 % es la que importa: **la muestra no toca el 94 %
 restante de los tramos porque ese resto no es ruta operativa**, no porque falte
@@ -98,13 +98,13 @@ información. La cobertura se concentra donde está la decisión:
 
 | Jerarquía | Cobertura de la muestra |
 |---|---|
-| Autopista (`motorway`) | **38.3 %** (204 de 532) |
-| Carretera troncal (`trunk`) | **28.5 %** (649 de 2 280) |
-| Primaria (`primary`) | 6.7 % (392 de 5 878) |
-| Secundaria (`secondary`) | 3.1 % (280 de 9 054) |
-| Terciaria (`tertiary`) | 1.5 % (105 de 7 165) |
+| Autopista (`motorway`) | **35.2 %** (187 de 532) |
+| Carretera troncal (`trunk`) | **26.8 %** (611 de 2 283) |
+| Primaria (`primary`) | 8.6 % (507 de 5 915) |
+| Secundaria (`secondary`) | 3.5 % (316 de 9 159) |
+| Terciaria (`tertiary`) | 1.7 % (122 de 7 344) |
 
-Es decir: la muestra recorre el 38 % de las autopistas y el 28 % de las
+Es decir: la muestra recorre el 35 % de las autopistas y el 27 % de las
 troncales, y apenas roza la red terciaria urbana. El universo grande existe para
 que el agente tenga **alternativas de desvío**, no porque se espere tráfico en
 cada tramo.

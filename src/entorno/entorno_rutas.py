@@ -108,6 +108,13 @@ class EntornoRutasCarga:
         self.holgura = float(self.cfg["entorno"]["ventana_entrega_min"])
         self.descanso_cada_h = float(self.cfg["entorno"].get("descanso_cada_h", 5.0))
         self.descanso_min = float(self.cfg["entorno"].get("descanso_min", 45))
+        # Multiplicador de tiempo para tramos vetados a vehículos pesados
+        # (`hgv=no`, `maxweight` o gálibo por debajo de la unidad). No es un
+        # bloqueo duro: la red se partiría en los tramos donde la restricción
+        # no tiene desvío legal.
+        self.penal_restriccion = float(
+            self.cfg["entorno"].get("penalizacion_pesados", 5.0)
+        )
 
         self.costos = self.esc.costos
         self.pesos = self.cfg["recompensa"]
@@ -210,6 +217,11 @@ class EntornoRutasCarga:
                 f *= 50.0
             if evitar_tramo is not None and base == evitar_tramo:
                 f *= 1000.0
+            # Restricción de vehículos pesados: el tramo sigue siendo recorrible
+            # (si no, la red se partiría), pero se penaliza para que el
+            # planificador busque el desvío legal cuando exista.
+            if bool(d.get("restriccion_pesados", False)):
+                f *= self.penal_restriccion
             return float(d["tiempo_flujo_min"]) * f
 
         clave = (origen, destino, evitar_tramo)
@@ -282,6 +294,8 @@ class EntornoRutasCarga:
         for clave, datos in self.red.grafo[origen][destino].items():
             base = clave[:-2] if clave.endswith("_R") else clave
             t = float(datos["tiempo_flujo_min"]) * self._factor_evento(base)
+            if bool(datos.get("restriccion_pesados", False)):
+                t *= self.penal_restriccion
             if agente is not None and agente.evitar.get(base, 0.0) > self.hora_actual:
                 t *= 50.0
             if t < mejor_t:
