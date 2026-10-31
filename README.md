@@ -86,22 +86,142 @@ públicos y devuelven 500/504).
 
 ### Motor de rutas (Valhalla)
 
+Valhalla calcula la **ruta principal** de cada par OD con perfil de camión real
+(`hgv`, `maxweight`, `maxheight`, `maxwidth`, `maxlength`, `axle_load`). Se usa
+**fuera** del bucle de aprendizaje: si eligiera la ruta en cada paso, el agente
+dejaría de tener sentido — el agente aprende *cuándo* desviarse, no *por dónde*
+ir. Detalle, comparativa con OSRM/GraphHopper y resultados medidos en
+[`docs/07_motor_rutas.md`](docs/07_motor_rutas.md).
+
+#### 1. Requisitos
+
+- **Docker Desktop** en marcha (en Windows, con backend WSL2).
+- **8 GB de RAM** disponibles para el contenedor. Por debajo de 4 GB la
+  construcción de tiles muere sin mensaje claro.
+- **~2,5 GB de disco** para los tiles de Perú, más 257 MB del PBF.
+- Puerto **8002** libre.
+
+#### 2. Instalación
+
 ```bash
-cp data/raw/pbf/peru-latest.osm.pbf data/raw/valhalla/   # una sola vez: la imagen busca *.pbf aquí
+# 1) Extracto OSM de Perú (una sola vez, 257 MB, desde Geofabrik)
+curl -L -o data/raw/pbf/peru-latest.osm.pbf \
+  https://download.geofabrik.de/south-america/peru-latest.osm.pbf
+
+# 2) La imagen solo detecta *.pbf dentro de /custom_files: hay que copiarlo ahí
+cp data/raw/pbf/peru-latest.osm.pbf data/raw/valhalla/
+
+# 3) Levantar el contenedor
 cd infra/valhalla
-docker compose up -d          # la primera vez construye los tiles de Perú (~20-40 min)
-docker compose logs -f        # seguir el avance
-cd ../..
-python scripts/08_rutas_valhalla.py            # 7 pares OD, 2 alternativas
+docker compose up -d
+
+# 4) Seguir la construcción de tiles (la primera vez tarda 20-40 min)
+docker compose logs -f
+
+# 5) Comprobar que responde
+curl http://localhost:8002/status
 ```
 
-El motor se usa **fuera** del bucle de aprendizaje: aporta la línea de base por
-par OD, las K alternativas y una validación independiente de la red. Detalle y
-justificación de la elección en [`docs/07_motor_rutas.md`](docs/07_motor_rutas.md).
+Cuando termina, `/status` devuelve algo así:
 
-Como Valhalla devuelve alternativas en solo 2 de 7 pares con perfil camión,
-`scripts/09_alternativas.py` las genera sobre la red propia (K rutas por par OD,
-ejecutables por el simulador) sin necesidad de tener el motor levantado.
+```json
+{"version":"3.5.1","tileset_last_modified":1793402470,
+ "available_actions":["status","route","optimized_route","sources_to_targets","trace_route", ...]}
+```
+
+Los tiles quedan en `data/raw/valhalla/` (ignorado por git). **Las siguientes
+veces el arranque es inmediato**: no se reconstruyen salvo que cambie el PBF o
+se pida `force_rebuild=True`.
+
+```bash
+docker compose down              # detener
+docker compose restart           # reiniciar (no reconstruye tiles)
+docker stats valhalla-peru       # consumo durante la construcción
+
+# forzar una reconstrucción completa de los tiles
+rm -rf data/raw/valhalla/valhalla_tiles data/raw/valhalla/valhalla_tiles.tar
+docker compose up -d
+```
+
+#### 3. Calcular las rutas principales
+
+```bash
+python scripts/08_rutas_valhalla.py
+```
+
+Recorre los 7 pares OD del escenario con perfil camión y escribe en
+`data/processed/valhalla/`:
+
+| Archivo | Contenido |
+|---|---|
+| `rutas_od.csv` | km y min del motor, km de la red propia, desvío porcentual, km/min de cada alternativa |
+| `rutas_od.json` | Lo mismo con los parámetros usados, para trazabilidad |
+| `rutas_od.geojson` | Trazas de la ruta principal y de cada alternativa, listas para QGIS |
+| `sensibilidad_peso.csv` | Barrido peso × par OD (solo con `--sensibilidad-peso`) |
+
+Opciones:
+
+```bash
+python scripts/08_rutas_valhalla.py --alternativas 3 --peso-t 36   # perfil más pesado
+python scripts/08_rutas_valhalla.py --comparar-auto                # añade el perfil auto
+python scripts/08_rutas_valhalla.py --sensibilidad-peso            # barre el peso bruto
+python scripts/08_rutas_valhalla.py --pesos 30,36,42,48            # pesos del barrido
+python scripts/08_rutas_valhalla.py --url http://localhost:8002    # otro servidor
+```
+
+- `--comparar-auto` separa el error de topología del efecto de las restricciones
+  de pesados: el desvío medio contra `auto` es **+0,73 %**, contra `truck`
+  **+2,25 %**, y la diferencia son los tramos con `hgv=no` de la salida de Lima.
+- `--sensibilidad-peso` localiza el umbral que rompe el corredor: LIM–TRU son
+  609,6 km hasta 36 t y **953,1 km a partir de 37 t** (+56 %).
+
+Parámetros del perfil: peso bruto 36 t, alto 4,1 m, ancho 2,6 m, largo 18 m
+(articulado peruano típico); ajustables con `--peso-t`, `--alto-m`, `--ancho-m`,
+`--largo-m`.
+
+#### 4. Calcular las alternativas
+
+Valhalla devuelve alternativas en solo 2 de 7 pares con perfil camión, y una
+traza suya es geometría, no una secuencia de tramos que el simulador pueda
+ejecutar. Para eso está el script 09, que **no necesita Docker**:
+
+```bash
+python scripts/09_alternativas.py                     # 7 principales + 14 alternativas
+python scripts/09_alternativas.py --k 4               # hasta 4 rutas por par
+python scripts/09_alternativas.py --peso-t 30 --alto-m 4.0
+python scripts/09_alternativas.py --sin-bloqueo       # ignora límites físicos
+```
+
+Salidas en `data/processed/alternativas/`: `alternativas_od.csv` (con
+`secuencia_tramos` de cada ruta) y `alternativas_od.geojson`.
+
+> Valhalla solo hace falta para la línea de base externa y la validación
+> independiente; las alternativas se calculan sin el contenedor levantado.
+
+#### 5. Consultar la API a mano
+
+```bash
+curl -s http://localhost:8002/route -H 'Content-Type: application/json' -d '{
+  "locations": [{"lat": -12.0464, "lon": -77.0428}, {"lat": -8.1116, "lon": -79.0287}],
+  "costing": "truck",
+  "costing_options": {"truck": {"height": 4.1, "width": 2.6, "length": 18.0, "weight": 36.0}},
+  "units": "kilometers",
+  "alternates": 2
+}' | python -m json.tool
+```
+
+Documentación interactiva del servidor: <http://localhost:8002/docs>.
+
+#### 6. Problemas comunes
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `curl: (3) URL rejected: No host part in the URL` y el contenedor reinicia en bucle | Se puso una ruta local en `tile_urls`, que solo acepta URLs | Copiar el PBF a `data/raw/valhalla/` y no definir `tile_urls` |
+| `ERROR ... NOT NULL constraint failed: admin_access.admin_id` para Oman, Slovakia, Philippines… | El builder recorre su lista mundial de países; los que no están en un extracto de país no resuelven | **Ignorar**: el propio mensaje lo dice. El admin db sí se construye (*"Inserted 26 admin areas"*) |
+| `short read: expected N bytes but got M: unexpected EOF` al hacer `docker pull` | Corte de red al bajar un layer | Reintentar; los layers ya bajados se reutilizan |
+| El contenedor se reinicia cada pocos segundos | Casi siempre es el primer caso de esta tabla | `docker logs valhalla-peru` |
+| `Error: bind for 0.0.0.0:8002 failed` | Puerto ocupado | Cambiar el mapeo en `infra/valhalla/docker-compose.yml` y pasar `--url` |
+| `/status` responde 503 durante mucho rato | Los tiles siguen construyéndose | `docker compose logs -f` y esperar |
 
 ## 3. Estructura
 
@@ -117,8 +237,9 @@ src/
   agentes/                 # QMIX, MAPPO, baselines
   entrenamiento/           # entrenar.py, evaluar.py
   metricas.py              # métricas del plan de tesis
-scripts/                   # CLI de las 4 etapas
+scripts/                   # CLI del pipeline (00 extracto → 09 alternativas)
 docs/                      # documentación metodológica
+infra/valhalla/            # docker-compose del motor de rutas
 data/                      # raw / interim / processed
 artifacts/                 # modelos, logs y resultados
 ```
