@@ -19,8 +19,13 @@ ENV/
 
 # ── Datos descargados / generados (se regeneran con los scripts) ──
 data/raw/
-data/processed/
-!data/.gitkeep
+data/processed/alternativas
+data/processed/benchmark
+data/processed/dataset
+data/processed/dataset_smoke
+data/processed/red_vial
+data/processed/valhalla
+
 
 # ── Cache de descargas / logs temporales ──
 cache/

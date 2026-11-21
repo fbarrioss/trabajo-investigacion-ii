@@ -1,0 +1,32 @@
+{
+  "fecha_generacion": "2026-11-20T20:47:27.552500",
+  "parametros": {
+    "porcentaje": 0.5,
+    "alternativas_pedidas": 2,
+    "peso_t": 36.0,
+    "alto_m": 4.1,
+    "ancho_m": 2.6,
+    "largo_m": 18.0,
+    "semilla": 20261016,
+    "perfil": "truck",
+    "url_valhalla": "http://localhost:8002"
+  },
+  "tramos_totales_red": 28642,
+  "tramos_factibles": 27314,
+  "tramos_seleccionados": 13656,
+  "tramos_con_respuesta_valhalla": 7869,
+  "tramos_con_alternativa_real": 1487,
+  "tramos_sin_respuesta": 21,
+  "rutas_total": 15806,
+  "tiempo_segundos": 284.0,
+  "distribucion_por_zona": {
+    "CHI": 894,
+    "CHU": 70,
+    "HUY": 385,
+    "LIM": 9577,
+    "PAI": 91,
+    "PIU": 771,
+    "SUL": 175,
+    "TRU": 1693
+  }
+}

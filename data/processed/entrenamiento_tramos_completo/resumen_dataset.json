@@ -1,0 +1,37 @@
+{
+  "fecha_generacion": "2026-11-20T20:57:00.726878",
+  "descripcion": "Dataset completo (100 % de tramos factibles) resultado de fusionar las dos mitades",
+  "parametros": {
+    "porcentaje": 0.5,
+    "alternativas_pedidas": 2,
+    "peso_t": 36.0,
+    "alto_m": 4.1,
+    "ancho_m": 2.6,
+    "largo_m": 18.0,
+    "semilla": 20261016,
+    "perfil": "truck",
+    "url_valhalla": "http://localhost:8002"
+  },
+  "tramos_totales_red": 28642,
+  "tramos_factibles": 27314,
+  "tramos_seleccionados": 27314,
+  "tramos_con_respuesta_valhalla": 15741,
+  "tramos_con_alternativa_real": 2993,
+  "tramos_sin_respuesta": 33,
+  "rutas_total": 31613,
+  "tiempo_segundos": 495.5,
+  "distribucion_por_zona": {
+    "CHI": 1788,
+    "CHU": 141,
+    "HUY": 770,
+    "LIM": 19154,
+    "PAI": 182,
+    "PIU": 1542,
+    "SUL": 351,
+    "TRU": 3386
+  },
+  "mitades": {
+    "primera": "C:\\Users\\Franklin\\WorkBuddy AI\\Trabajo investigacion II\\marl-rutas-carga\\data\\processed\\entrenamiento_tramos",
+    "complemento": "C:\\Users\\Franklin\\WorkBuddy AI\\Trabajo investigacion II\\marl-rutas-carga\\data\\processed\\entrenamiento_tramos_complemento"
+  }
+}
