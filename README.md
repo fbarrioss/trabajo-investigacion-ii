@@ -53,6 +53,9 @@ python scripts/07_cobertura_muestra.py    # marco muestral de ese extracto
 python scripts/08_rutas_valhalla.py        # rutas de referencia con perfil camión (requiere Valhalla)
 python scripts/09_alternativas.py          # 7 principales + 14 alternativas sobre la red propia
 
+# 2e) Dataset de entrenamiento: 50 % de tramos + alternativas Valhalla (requiere Valhalla)
+python scripts/10_dataset_entrenamiento.py
+
 # 3) Entrenamiento
 python scripts/03_entrenar.py --algoritmo qmix  --episodios 2000 --semillas 1 2 3
 python scripts/03_entrenar.py --algoritmo mappo --episodios 2000 --semillas 1
@@ -237,7 +240,7 @@ src/
   agentes/                 # QMIX, MAPPO, baselines
   entrenamiento/           # entrenar.py, evaluar.py
   metricas.py              # métricas del plan de tesis
-scripts/                   # CLI del pipeline (00 extracto → 09 alternativas)
+scripts/                   # CLI del pipeline (00 extracto → 10 dataset entrenamiento)
 docs/                      # documentación metodológica
 infra/valhalla/            # docker-compose del motor de rutas
 data/                      # raw / interim / processed
@@ -324,7 +327,102 @@ vehículo puede rodear un tramo bloqueado, de modo que la acción «tomar altern
 tiene efecto medible (encarece la ruta y alarga el recorrido) y no es una acción
 muerta.
 
-### 4.3 Archivos generados
+### 4.3 Dataset de entrenamiento (50 % de tramos + alternativas Valhalla)
+
+El simulador `EntornoRutasCarga` necesita, para cada tramo por el que circula un
+camión, saber si existe una ruta alternativa y cuál es. Consultar Valhalla en
+tiempo real durante el entrenamiento sería inviable (latencia × 2000 episodios ×
+591 tramos/ruta × 3 agentes), así que ese cálculo se pre-cacula y se almacena.
+
+`scripts/10_dataset_entrenamiento.py` hace dos cosas:
+
+1. **Selecciona el 50 % de los tramos** de la red con un muestreo **estratificado
+   por zona** (LIM, TRU, CHI, PIU, HUY, SUL, PAI, CHU) y **semilla fija**
+   (20261016). Solo se seleccionan los tramos con `tiene_alterna=True` (27 314
+   de 28 642): los 1 328 tramos de corte no admiten desvío y se excluyen.
+2. **Consulta Valhalla** por cada tramo seleccionado: pide la ruta principal y
+   hasta 2 alternativas con perfil `truck` (36 t, 4,1 m, 2,6 m, 18 m).
+
+```bash
+# Requisito: Valhalla corriendo
+cd infra/valhalla && docker compose up -d
+
+# Generar el dataset completo (~5 min)
+python scripts/10_dataset_entrenamiento.py
+
+# Opciones
+python scripts/10_dataset_entrenamiento.py --porcentaje 0.30   # 30 % en vez de 50 %
+python scripts/10_dataset_entrenamiento.py --alternativas 3    # pedir 3 alternativas
+python scripts/10_dataset_entrenamiento.py --peso-t 42         # camión más pesado
+python scripts/10_dataset_entrenamiento.py --limite 100        # prueba rápida (100 tramos)
+```
+
+#### Resultado del dataset generado
+
+| Indicador | Valor |
+|---|---|
+| Tramos totales de la red | 28 642 |
+| Tramos factibles (con alterna) | 27 314 |
+| Tramos seleccionados (50 %) | **13 656** |
+| Tramos con respuesta de Valhalla | 7 869 |
+| Tramos con alternativa real | 1 487 |
+| Tramos sin respuesta (fallos) | 21 (0,15 %) |
+| Total de rutas generadas | **15 806** |
+| Tiempo de generación | 284 s (~5 min) |
+
+Distribución por zona (proporcional al tamaño de cada ciudad):
+
+| Zona | Tramos | % |
+|---|---|---|
+| LIM | 9 577 | 70,1 % |
+| TRU | 1 693 | 12,4 % |
+| CHI | 894 | 6,5 % |
+| PIU | 771 | 5,6 % |
+| HUY | 385 | 2,8 % |
+| SUL | 175 | 1,3 % |
+| PAI | 91 | 0,7 % |
+| CHU | 70 | 0,5 % |
+
+#### Archivos generados
+
+`data/processed/entrenamiento_tramos/`
+
+| Archivo | Contenido |
+|---|---|
+| `tramos_seleccionados.csv` | 13 656 tramos con todos sus atributos (subconjunto de `tramos.csv`) |
+| `alternativas_valhalla.csv` | 15 806 filas: ruta principal (`rango=1`) + alternativas (`rango=2,3`) por tramo, con km, min y *encoded polyline* |
+| `alternativas_valhalla.json` | Mismo dato en JSON para carga rápida en el bucle de entrenamiento |
+| `alternativas_valhalla.geojson` | Trazas decodificadas para inspección en QGIS |
+| `resumen_dataset.json` | Métricas del dataset y parámetros usados |
+
+#### Cómo usar el dataset en el entrenamiento
+
+El bucle de entrenamiento (`scripts/03_entrenar.py`) carga las alternativas una
+vez al inicio y las consulta por `id_tramo` en cada paso del simulador:
+
+```python
+import pandas as pd
+
+# Cargar el dataset de alternativas
+alt = pd.read_csv("data/processed/entrenamiento_tramos/alternativas_valhalla.csv")
+
+# Para un tramo dado, obtener sus rutas (principal + alternativas)
+rutas_tramo = alt[alt["id_tramo"] == "TR-00002"].sort_values("rango")
+# rango 1 = ruta principal, rango 2/3 = alternativas
+# km_valhalla, min_valhalla = distancia y tiempo de cada ruta
+```
+
+El campo `rango` indica el orden de la ruta:
+- `rango=0`: tramo muy corto (<50 m), sin consulta a Valhalla.
+- `rango=1`: ruta principal calculada por Valhalla con perfil truck.
+- `rango=2,3`: rutas alternativas reales (cuando Valhalla las encontró).
+
+Cuando un agente ejecuta la acción **tomar alterna** (`acción=1`), el simulador
+usa la alternativa de `rango=2` para ese tramo (si existe). El campo
+`n_alternativas` indica cuántas alternativas reales tiene el tramo; si es 0, la
+acción no tiene efecto sobre ese tramo en particular.
+
+### 4.4 Archivos generados
 
 `data/processed/red_vial/`
 
