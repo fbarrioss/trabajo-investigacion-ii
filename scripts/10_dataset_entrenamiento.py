@@ -33,7 +33,17 @@ Salidas (``data/processed/entrenamiento_tramos/``)
 Uso:
     # Asegurar Valhalla corriendo:
     cd infra/valhalla && docker compose up -d
+
+    # Primera mitad (50 %)
     python scripts/10_dataset_entrenamiento.py
+
+    # Segunda mitad (el 50 % complementario)
+    python scripts/10_dataset_entrenamiento.py --complemento
+
+    # Merge de ambas mitades en un dataset completo:
+    python scripts/10_dataset_entrenamiento.py --merge
+
+    # Opciones adicionales
     python scripts/10_dataset_entrenamiento.py --porcentaje 0.3 --alternativas 2
 """
 from __future__ import annotations
@@ -151,10 +161,18 @@ def _resumen_trip(trip: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-def seleccionar_tramos(tramos: pd.DataFrame, porcentaje: float, seed: int) -> pd.DataFrame:
+def seleccionar_tramos(
+    tramos: pd.DataFrame,
+    porcentaje: float,
+    seed: int,
+    complemento: bool = False,
+) -> pd.DataFrame:
     """Seleccion estratificada por zona con semilla fija.
 
     Descarta los tramos sin ``tiene_alterna`` porque no tienen desvio posible.
+
+    Si ``complemento=True``, devuelve los tramos *no* seleccionados en la
+    corrida original, de modo que ambas mitades forman el 100 % sin solapes.
     """
     factibles = tramos[tramos["tiene_alterna"] == True].copy()  # noqa: E712
     n_factibles = len(factibles)
@@ -163,20 +181,141 @@ def seleccionar_tramos(tramos: pd.DataFrame, porcentaje: float, seed: int) -> pd
         len(tramos), n_factibles, len(tramos) - n_factibles,
     )
 
-    seleccionados_parts = []
-    for zona, g in factibles.groupby("zona"):
-        n_sel = int(len(g) * porcentaje)
-        seleccionados_parts.append(g.sample(n=n_sel, random_state=seed))
-    seleccionados = (
-        pd.concat(seleccionados_parts)
-        .sort_values("id_tramo")
-        .reset_index(drop=True)
-    )
-    LOG.info(
-        "Seleccionados %d tramos (%.1f %% de %d factibles)",
-        len(seleccionados), porcentaje * 100, n_factibles,
-    )
+    if complemento:
+        # Calcular la primera mitad para poder excluirla
+        primera = []
+        for zona, g in factibles.groupby("zona"):
+            n_sel = int(len(g) * porcentaje)
+            primera.append(g.sample(n=n_sel, random_state=seed))
+        ids_primera = set(
+            pd.concat(primera)["id_tramo"]
+        )
+        seleccionados = (
+            factibles[~factibles["id_tramo"].isin(ids_primera)]
+            .sort_values("id_tramo")
+            .reset_index(drop=True)
+        )
+        LOG.info(
+            "Complemento: %d tramos (resto del %.1f %% ya procesado)",
+            len(seleccionados), porcentaje * 100,
+        )
+    else:
+        seleccionados_parts = []
+        for zona, g in factibles.groupby("zona"):
+            n_sel = int(len(g) * porcentaje)
+            seleccionados_parts.append(g.sample(n=n_sel, random_state=seed))
+        seleccionados = (
+            pd.concat(seleccionados_parts)
+            .sort_values("id_tramo")
+            .reset_index(drop=True)
+        )
+        LOG.info(
+            "Seleccionados %d tramos (%.1f %% de %d factibles)",
+            len(seleccionados), porcentaje * 100, n_factibles,
+        )
     return seleccionados
+
+
+# ---------------------------------------------------------------------------
+def _merge_datasets() -> int:
+    """Combina las dos mitades en un dataset completo.
+
+    Lee de ``entrenamiento_tramos/`` y ``entrenamiento_tramos_complemento/``,
+    concatena los archivos y guarda el resultado en
+    ``entrenamiento_tramos_completo/``.
+    """
+    mitad_1 = SALIDA
+    mitad_2 = SALIDA.parent / "entrenamiento_tramos_complemento"
+    destino = SALIDA.parent / "entrenamiento_tramos_completo"
+
+    if not mitad_1.exists() or not mitad_2.exists():
+        LOG.error(
+            "Falta una de las dos mitades:\n  %s\n  %s",
+            mitad_1, mitad_2,
+        )
+        return 2
+
+    destino.mkdir(parents=True, exist_ok=True)
+
+    # --- Tramos seleccionados ---
+    t1 = pd.read_csv(mitad_1 / "tramos_seleccionados.csv", dtype={"id_tramo": str})
+    t2 = pd.read_csv(mitad_2 / "tramos_seleccionados.csv", dtype={"id_tramo": str})
+    tramos_completos = pd.concat([t1, t2]).sort_values("id_tramo").reset_index(drop=True)
+    tramos_completos.to_csv(destino / "tramos_seleccionados.csv", index=False, encoding="utf-8")
+    LOG.info("Tramos combinados: %d (%d + %d)", len(tramos_completos), len(t1), len(t2))
+
+    # --- Alternativas CSV ---
+    a1 = pd.read_csv(mitad_1 / "alternativas_valhalla.csv", dtype={"id_tramo": str})
+    a2 = pd.read_csv(mitad_2 / "alternativas_valhalla.csv", dtype={"id_tramo": str})
+    alternativas = pd.concat([a1, a2]).sort_values(["id_tramo", "rango"]).reset_index(drop=True)
+    alternativas.to_csv(destino / "alternativas_valhalla.csv", index=False, encoding="utf-8")
+    LOG.info("Alternativas combinadas: %d (%d + %d)", len(alternativas), len(a1), len(a2))
+
+    # --- JSON ---
+    j1 = json.loads((mitad_1 / "alternativas_valhalla.json").read_text(encoding="utf-8"))
+    j2 = json.loads((mitad_2 / "alternativas_valhalla.json").read_text(encoding="utf-8"))
+    (destino / "alternativas_valhalla.json").write_text(
+        json.dumps(j1 + j2, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # --- GeoJSON ---
+    g1 = json.loads((mitad_1 / "alternativas_valhalla.geojson").read_text(encoding="utf-8"))
+    g2 = json.loads((mitad_2 / "alternativas_valhalla.geojson").read_text(encoding="utf-8"))
+    g1["features"].extend(g2["features"])
+    (destino / "alternativas_valhalla.geojson").write_text(
+        json.dumps(g1, ensure_ascii=False), encoding="utf-8"
+    )
+
+    # --- Resumen combinado ---
+    r1 = json.loads((mitad_1 / "resumen_dataset.json").read_text(encoding="utf-8"))
+    r2 = json.loads((mitad_2 / "resumen_dataset.json").read_text(encoding="utf-8"))
+    dist = {}
+    for zona, n in r1["distribucion_por_zona"].items():
+        dist[zona] = dist.get(zona, 0) + n
+    for zona, n in r2["distribucion_por_zona"].items():
+        dist[zona] = dist.get(zona, 0) + n
+    resumen = {
+        "fecha_generacion": pd.Timestamp.now().isoformat(),
+        "descripcion": "Dataset completo (100 % de tramos factibles) "
+                       "resultado de fusionar las dos mitades",
+        "parametros": r1["parametros"],
+        "tramos_totales_red": r1["tramos_totales_red"],
+        "tramos_factibles": r1["tramos_factibles"],
+        "tramos_seleccionados": r1["tramos_seleccionados"] + r2["tramos_seleccionados"],
+        "tramos_con_respuesta_valhalla": r1["tramos_con_respuesta_valhalla"] + r2["tramos_con_respuesta_valhalla"],
+        "tramos_con_alternativa_real": r1["tramos_con_alternativa_real"] + r2["tramos_con_alternativa_real"],
+        "tramos_sin_respuesta": r1["tramos_sin_respuesta"] + r2["tramos_sin_respuesta"],
+        "rutas_total": r1["rutas_total"] + r2["rutas_total"],
+        "tiempo_segundos": round(r1["tiempo_segundos"] + r2["tiempo_segundos"], 1),
+        "distribucion_por_zona": dist,
+        "mitades": {
+            "primera": str(mitad_1),
+            "complemento": str(mitad_2),
+        },
+    }
+    (destino / "resumen_dataset.json").write_text(
+        json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # --- Reporte ---
+    print("\n" + "=" * 70)
+    print("  DATASET COMPLETO — 100 % TRAMOS + ALTERNATIVAS VALHALLA")
+    print("=" * 70)
+    print(f"  Tramos totales:           {resumen['tramos_seleccionados']:>8,}")
+    print(f"  Con respuesta Valhalla:   {resumen['tramos_con_respuesta_valhalla']:>8,}")
+    print(f"  Con alternativa real:     {resumen['tramos_con_alternativa_real']:>8,}")
+    print(f"  Sin respuesta:            {resumen['tramos_sin_respuesta']:>8,}")
+    print(f"  Rutas totales:            {resumen['rutas_total']:>8,}")
+    print(f"  Tiempo acumulado:         {resumen['tiempo_segundos']:>8.1f}s")
+    print()
+    print("  Distribucion por zona:")
+    for zona, n in sorted(dist.items(), key=lambda x: -x[1]):
+        pct = 100.0 * n / resumen["tramos_seleccionados"]
+        print(f"    {zona}: {n:>5} ({pct:5.1f} %)")
+    print()
+    print(f"  Archivos en {destino}")
+    print("=" * 70)
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +339,15 @@ def main() -> int:
                          "util para pruebas rapidas)")
     ap.add_argument("--reintentos", type=int, default=2,
                     help="reintentos por tramo si Valhalla falla")
+    ap.add_argument("--complemento", action="store_true",
+                    help="procesar el 50 % complementario (los tramos NO "
+                         "seleccionados en la primera corrida). Junto con la "
+                         "corrida original produce el 100 % de los tramos "
+                         "factibles.")
+    ap.add_argument("--merge", action="store_true",
+                    help="combina las dos mitades (entrenamiento_tramos + "
+                         "entrenamiento_tramos_complemento) en un dataset "
+                         "completo en entrenamiento_tramos_completo/.")
     args = ap.parse_args()
 
     logging.basicConfig(
@@ -207,6 +355,10 @@ def main() -> int:
         format="%(asctime)s %(levelname)s | %(message)s",
         datefmt="%H:%M:%S",
     )
+
+    # --- Modo merge: combinar las dos mitades ------------------------------
+    if args.merge:
+        return _merge_datasets()
 
     # --- Verificar Valhalla ------------------------------------------------
     if not _disponible(args.url):
@@ -226,8 +378,10 @@ def main() -> int:
         for r in nodos.itertuples(index=False)
     }
 
-    # --- Seleccionar 50 % --------------------------------------------------
-    seleccion = seleccionar_tramos(tramos, args.porcentaje, SEED)
+    # --- Seleccionar tramos ------------------------------------------------
+    seleccion = seleccionar_tramos(
+        tramos, args.porcentaje, SEED, complemento=args.complemento
+    )
 
     if args.limite > 0:
         seleccion = seleccion.head(args.limite).copy()
@@ -235,9 +389,11 @@ def main() -> int:
 
     # --- Guardar tramos seleccionados --------------------------------------
     destino = Path(args.salida)
+    if args.complemento and args.salida == str(SALIDA):
+        destino = SALIDA.parent / "entrenamiento_tramos_complemento"
     destino.mkdir(parents=True, exist_ok=True)
     seleccion.to_csv(destino / "tramos_seleccionados.csv", index=False, encoding="utf-8")
-    LOG.info("Guardado tramos_seleccionados.csv (%d filas)", len(seleccion))
+    LOG.info("Guardado tramos_seleccionados.csv (%d filas) en %s", len(seleccion), destino)
 
     # --- Consultar Valhalla por cada tramo ---------------------------------
     filas: list[dict] = []
