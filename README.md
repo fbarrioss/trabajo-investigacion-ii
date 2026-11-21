@@ -13,7 +13,7 @@ Este repositorio contiene **todo lo necesario para entrenar el modelo**:
 | `src/entrenamiento/` | Bucles de entrenamiento y evaluación estadística | ✅ |
 | `docs/` | Diccionario de datos, modelo MDP/MARL, selección de algoritmo | ✅ |
 
-> **Guía de lectura:** [`docs/08_explicacion_sencilla.md`](docs/08_explicacion_sencilla.md)
+> **Guía de lectura:** [`docs/08_validacion_con_valhalla.md`](docs/08_validacion_con_valhalla.md)
 > explica con diagramas Mermaid cómo se construyó el mapa, por qué se usa
 > Valhalla fuera del entrenamiento y cómo se generó el dataset.
 
