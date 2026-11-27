@@ -1,0 +1,110 @@
+{
+  "perfil": "truck",
+  "parametros": {
+    "peso_t": 36.0,
+    "alto_m": 4.1,
+    "ancho_m": 2.6,
+    "largo_m": 18.0,
+    "alternativas": 2
+  },
+  "rutas": [
+    {
+      "id_macro": "LIM-TRU",
+      "alcance": "corredor",
+      "km_valhalla": 609.6,
+      "min_valhalla": 521.3,
+      "km_red_propia": 547.6,
+      "desvio_pct": 11.32,
+      "n_alternativas": 0,
+      "km_alternativas": "",
+      "min_alternativas": "",
+      "km_auto": 560.1,
+      "desvio_auto_pct": 2.28,
+      "sobrecosto_restriccion_km": 49.5
+    },
+    {
+      "id_macro": "TRU-CHI",
+      "alcance": "corredor",
+      "km_valhalla": 208.6,
+      "min_valhalla": 165.9,
+      "km_red_propia": 203.2,
+      "desvio_pct": 2.66,
+      "n_alternativas": 0,
+      "km_alternativas": "",
+      "min_alternativas": "",
+      "km_auto": 208.6,
+      "desvio_auto_pct": 2.66,
+      "sobrecosto_restriccion_km": 0.0
+    },
+    {
+      "id_macro": "CHI-PIU",
+      "alcance": "corredor",
+      "km_valhalla": 217.6,
+      "min_valhalla": 148.6,
+      "km_red_propia": 212.8,
+      "desvio_pct": 2.26,
+      "n_alternativas": 0,
+      "km_alternativas": "",
+      "min_alternativas": "",
+      "km_auto": 215.6,
+      "desvio_auto_pct": 1.32,
+      "sobrecosto_restriccion_km": 2.0
+    },
+    {
+      "id_macro": "PIU-SUL",
+      "alcance": "corredor",
+      "km_valhalla": 39.0,
+      "min_valhalla": 30.0,
+      "km_red_propia": 39.3,
+      "desvio_pct": -0.76,
+      "n_alternativas": 1,
+      "km_alternativas": "43.9",
+      "min_alternativas": "43.2",
+      "km_auto": 39.0,
+      "desvio_auto_pct": -0.76,
+      "sobrecosto_restriccion_km": 0.0
+    },
+    {
+      "id_macro": "PIU-CHU",
+      "alcance": "corredor",
+      "km_valhalla": 60.9,
+      "min_valhalla": 45.5,
+      "km_red_propia": 61.6,
+      "desvio_pct": -1.14,
+      "n_alternativas": 0,
+      "km_alternativas": "",
+      "min_alternativas": "",
+      "km_auto": 60.9,
+      "desvio_auto_pct": -1.14,
+      "sobrecosto_restriccion_km": 0.0
+    },
+    {
+      "id_macro": "LIM-HUY",
+      "alcance": "extension",
+      "km_valhalla": 306.6,
+      "min_valhalla": 305.0,
+      "km_red_propia": 303.4,
+      "desvio_pct": 1.05,
+      "n_alternativas": 1,
+      "km_alternativas": "328.4",
+      "min_alternativas": "345.8",
+      "km_auto": 306.1,
+      "desvio_auto_pct": 0.89,
+      "sobrecosto_restriccion_km": 0.5
+    },
+    {
+      "id_macro": "PIU-PAI",
+      "alcance": "extension",
+      "km_valhalla": 58.0,
+      "min_valhalla": 42.1,
+      "km_red_propia": 57.8,
+      "desvio_pct": 0.35,
+      "n_alternativas": 0,
+      "km_alternativas": "",
+      "min_alternativas": "",
+      "km_auto": 57.7,
+      "desvio_auto_pct": -0.17,
+      "sobrecosto_restriccion_km": 0.3
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "n_nodos": 18167,
+  "n_tramos": 28642,
+  "km_totales": 14017.1,
+  "n_decision": 18140,
+  "n_distribuidores": 17,
+  "n_unidireccionales": 23567,
+  "n_bidireccionales": 5075,
+  "n_restriccion_pesados": 206,
+  "km_restriccion_pesados": 102.4,
+  "n_micro_tramos": 154,
+  "conectado": true,
+  "fuente": "OpenStreetMap (Overpass API + extracto Geofabrik Perú + OSMnx)",
+  "escenario": "corredor_norte_peru",
+  "nodos_logisticos": 25,
+  "ciudades": 8,
+  "nodos_osm_totales": 339863,
+  "nodos_geometria_contraidos": 321664,
+  "nodos_fragmentos_descartados": 32
+}

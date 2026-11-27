@@ -1,0 +1,177 @@
+{
+  "1:GEO-001": {
+    "lat": -9.12212,
+    "lon": -78.53098,
+    "fuente": "viajes",
+    "ciudad": "Nuevo Chimbote",
+    "departamento": "Ancash"
+  },
+  "2:GEO-002": {
+    "lat": -9.07454,
+    "lon": -78.59357,
+    "fuente": "viajes",
+    "ciudad": "Chimbote",
+    "departamento": "Ancash"
+  },
+  "3:GEO-003": {
+    "lat": -8.107474,
+    "lon": -79.0144114,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "4:GEO-004": {
+    "lat": -8.1051259,
+    "lon": -79.0380156,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "5:GEO-005": {
+    "lat": -8.1058976,
+    "lon": -79.040777,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "6:GEO-006": {
+    "lat": -8.1363338,
+    "lon": -79.0327209,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "7:GEO-007": {
+    "lat": -8.1112505,
+    "lon": -79.0195812,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "8:GEO-008": {
+    "lat": -8.1112238,
+    "lon": -79.0273061,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "9:GEO-009": {
+    "lat": -8.111181,
+    "lon": -79.0273061,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "10:GEO-010": {
+    "lat": -8.1361386,
+    "lon": -79.0805223,
+    "fuente": "viajes",
+    "ciudad": "Trujillo",
+    "departamento": "La Libertad"
+  },
+  "11:GEO-011": {
+    "lat": -6.7714,
+    "lon": -79.8409,
+    "fuente": "viajes",
+    "ciudad": "Chiclayo",
+    "departamento": "Lambayeque"
+  },
+  "12:GEO-012": {
+    "lat": -6.88194,
+    "lon": -79.86965,
+    "fuente": "viajes",
+    "ciudad": "Chiclayo",
+    "departamento": "Lambayeque"
+  },
+  "13:GEO-013": {
+    "lat": -6.781777,
+    "lon": -79.8902405,
+    "fuente": "catalogo",
+    "ciudad": "Chiclayo",
+    "departamento": "Lambayeque"
+  },
+  "14:GEO-014": {
+    "lat": -6.8238,
+    "lon": -79.8611,
+    "fuente": "viajes",
+    "ciudad": "Chiclayo",
+    "departamento": "Lambayeque"
+  },
+  "15:GEO-015": {
+    "lat": -6.7858664,
+    "lon": -79.8485981,
+    "fuente": "catalogo",
+    "ciudad": "Chiclayo",
+    "departamento": "Lambayeque"
+  },
+  "16:GEO-016": {
+    "lat": -5.1819,
+    "lon": -80.6572,
+    "fuente": "viajes",
+    "ciudad": "Piura",
+    "departamento": "Piura"
+  },
+  "17:GEO-017": {
+    "lat": -4.9039,
+    "lon": -80.6853,
+    "fuente": "viajes",
+    "ciudad": "Sullana",
+    "departamento": "Piura"
+  },
+  "18:GEO-018": {
+    "lat": -5.0925,
+    "lon": -80.1625,
+    "fuente": "viajes",
+    "ciudad": "Chulucanas",
+    "departamento": "Piura"
+  },
+  "19:GEO-019": {
+    "lat": -5.0892,
+    "lon": -81.1144,
+    "fuente": "viajes",
+    "ciudad": "Paita",
+    "departamento": "Piura"
+  },
+  "20:GEO-020": {
+    "lat": -4.9269,
+    "lon": -80.3447,
+    "fuente": "viajes",
+    "ciudad": "Tambo Grande",
+    "departamento": "Piura"
+  },
+  "21:GEO-021": {
+    "lat": -5.0925,
+    "lon": -80.1625,
+    "fuente": "viajes",
+    "ciudad": "Chulucanas",
+    "departamento": "Piura"
+  },
+  "22:GEO-022": {
+    "lat": -5.1765346,
+    "lon": -80.701664,
+    "fuente": "catalogo",
+    "ciudad": "Piura",
+    "departamento": "Piura"
+  },
+  "23:GEO-023": {
+    "lat": -12.05036,
+    "lon": -75.22132,
+    "fuente": "viajes",
+    "ciudad": "Huancayo",
+    "departamento": "Junín"
+  },
+  "24:GEO-024": {
+    "lat": -12.0681,
+    "lon": -75.2101,
+    "fuente": "viajes",
+    "ciudad": "Huancayo",
+    "departamento": "Junín"
+  },
+  "25:GEO-025": {
+    "lat": -12.0740257,
+    "lon": -75.2168585,
+    "fuente": "catalogo",
+    "ciudad": "Huancayo",
+    "departamento": "Junín"
+  }
+}

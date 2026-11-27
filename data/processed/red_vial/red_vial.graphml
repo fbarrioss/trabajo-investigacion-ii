@@ -1,0 +1,915 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d3" for="edge" attr.name="es_alternativa" attr.type="boolean" />
+  <key id="d2" for="edge" attr.name="tiempo_flujo_min" attr.type="double" />
+  <key id="d1" for="edge" attr.name="distancia_km" attr.type="double" />
+  <key id="d0" for="edge" attr.name="id_tramo" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="LIM" />
+    <node id="ANC" />
+    <node id="CHA" />
+    <node id="HUA" />
+    <node id="BAR" />
+    <node id="PAR" />
+    <node id="CAS" />
+    <node id="CHB" />
+    <node id="SRA" />
+    <node id="VIR" />
+    <node id="TRU" />
+    <node id="PAI" />
+    <node id="PAC" />
+    <node id="SPL" />
+    <node id="GUA" />
+    <node id="MOC" />
+    <node id="REQ" />
+    <node id="CHI" />
+    <node id="LAM" />
+    <node id="MOT" />
+    <node id="OLM" />
+    <node id="PIU" />
+    <node id="SUL" />
+    <node id="TAM" />
+    <node id="CHU" />
+    <node id="TRU-D01" />
+    <node id="TRU-D02" />
+    <node id="TRU-D03" />
+    <node id="TRU-D04" />
+    <node id="TRU-D05" />
+    <node id="TRU-D06" />
+    <node id="TRU-D07" />
+    <node id="CHI-D01" />
+    <node id="CHI-D02" />
+    <node id="CHI-D03" />
+    <node id="PIU-D01" />
+    <node id="PIU-D02" />
+    <node id="PIU-D03" />
+    <node id="SUL-D01" />
+    <node id="SUL-D02" />
+    <node id="CHU-D01" />
+    <node id="CHU-D02" />
+    <edge source="LIM" target="ANC" id="T0001">
+      <data key="d0">T0001</data>
+      <data key="d1">39.176</data>
+      <data key="d2">29.38</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="LIM" target="ANC" id="T0002">
+      <data key="d0">T0002</data>
+      <data key="d1">46.228</data>
+      <data key="d2">40.79</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="ANC" target="LIM" id="T0001_R">
+      <data key="d0">T0001</data>
+      <data key="d1">39.176</data>
+      <data key="d2">29.38</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="ANC" target="LIM" id="T0002_R">
+      <data key="d0">T0002</data>
+      <data key="d1">46.228</data>
+      <data key="d2">40.79</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="ANC" target="CHA" id="T0003">
+      <data key="d0">T0003</data>
+      <data key="d1">30.138</data>
+      <data key="d2">21.27</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHA" target="ANC" id="T0003_R">
+      <data key="d0">T0003</data>
+      <data key="d1">30.138</data>
+      <data key="d2">21.27</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHA" target="HUA" id="T0004">
+      <data key="d0">T0004</data>
+      <data key="d1">75.932</data>
+      <data key="d2">53.6</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHA" target="HUA" id="T0005">
+      <data key="d0">T0005</data>
+      <data key="d1">89.599</data>
+      <data key="d2">74.41</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="HUA" target="CHA" id="T0004_R">
+      <data key="d0">T0004</data>
+      <data key="d1">75.932</data>
+      <data key="d2">53.6</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="HUA" target="CHA" id="T0005_R">
+      <data key="d0">T0005</data>
+      <data key="d1">89.599</data>
+      <data key="d2">74.41</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="HUA" target="BAR" id="T0006">
+      <data key="d0">T0006</data>
+      <data key="d1">52.32</data>
+      <data key="d2">36.93</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="HUA" target="BAR" id="T0007">
+      <data key="d0">T0007</data>
+      <data key="d1">61.737</data>
+      <data key="d2">51.27</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="BAR" target="HUA" id="T0006_R">
+      <data key="d0">T0006</data>
+      <data key="d1">52.32</data>
+      <data key="d2">36.93</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="BAR" target="HUA" id="T0007_R">
+      <data key="d0">T0007</data>
+      <data key="d1">61.737</data>
+      <data key="d2">51.27</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="BAR" target="PAR" id="T0008">
+      <data key="d0">T0008</data>
+      <data key="d1">12.624</data>
+      <data key="d2">8.91</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAR" target="BAR" id="T0008_R">
+      <data key="d0">T0008</data>
+      <data key="d1">12.624</data>
+      <data key="d2">8.91</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAR" target="CAS" id="T0009">
+      <data key="d0">T0009</data>
+      <data key="d1">177.977</data>
+      <data key="d2">125.63</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAR" target="CAS" id="T0010">
+      <data key="d0">T0010</data>
+      <data key="d1">210.013</data>
+      <data key="d2">174.4</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="CAS" target="PAR" id="T0009_R">
+      <data key="d0">T0009</data>
+      <data key="d1">177.977</data>
+      <data key="d2">125.63</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CAS" target="PAR" id="T0010_R">
+      <data key="d0">T0010</data>
+      <data key="d1">210.013</data>
+      <data key="d2">174.4</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="CAS" target="CHB" id="T0011">
+      <data key="d0">T0011</data>
+      <data key="d1">60.798</data>
+      <data key="d2">40.53</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CAS" target="CHB" id="T0012">
+      <data key="d0">T0012</data>
+      <data key="d1">71.742</data>
+      <data key="d2">56.27</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="CHB" target="CAS" id="T0011_R">
+      <data key="d0">T0011</data>
+      <data key="d1">60.798</data>
+      <data key="d2">40.53</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHB" target="CAS" id="T0012_R">
+      <data key="d0">T0012</data>
+      <data key="d1">71.742</data>
+      <data key="d2">56.27</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="CHB" target="SRA" id="T0013">
+      <data key="d0">T0013</data>
+      <data key="d1">13.085</data>
+      <data key="d2">8.72</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SRA" target="CHB" id="T0013_R">
+      <data key="d0">T0013</data>
+      <data key="d1">13.085</data>
+      <data key="d2">8.72</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SRA" target="VIR" id="T0014">
+      <data key="d0">T0014</data>
+      <data key="d1">74.753</data>
+      <data key="d2">49.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SRA" target="VIR" id="T0015">
+      <data key="d0">T0015</data>
+      <data key="d1">88.208</data>
+      <data key="d2">69.18</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="VIR" target="SRA" id="T0014_R">
+      <data key="d0">T0014</data>
+      <data key="d1">74.753</data>
+      <data key="d2">49.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="VIR" target="SRA" id="T0015_R">
+      <data key="d0">T0015</data>
+      <data key="d1">88.208</data>
+      <data key="d2">69.18</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="VIR" target="TRU" id="T0016">
+      <data key="d0">T0016</data>
+      <data key="d1">52.716</data>
+      <data key="d2">37.21</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="VIR" target="TRU" id="T0017">
+      <data key="d0">T0017</data>
+      <data key="d1">62.205</data>
+      <data key="d2">51.66</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="TRU" target="VIR" id="T0016_R">
+      <data key="d0">T0016</data>
+      <data key="d1">52.716</data>
+      <data key="d2">37.21</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="VIR" id="T0017_R">
+      <data key="d0">T0017</data>
+      <data key="d1">62.205</data>
+      <data key="d2">51.66</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="TRU" target="PAI" id="T0018">
+      <data key="d0">T0018</data>
+      <data key="d1">59.336</data>
+      <data key="d2">39.56</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="PAI" id="T0019">
+      <data key="d0">T0019</data>
+      <data key="d1">70.017</data>
+      <data key="d2">54.92</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="TRU" target="TRU-D01" id="T0039">
+      <data key="d0">T0039</data>
+      <data key="d1">1.669</data>
+      <data key="d2">3.85</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D01" id="T0040_R">
+      <data key="d0">T0040</data>
+      <data key="d1">1.669</data>
+      <data key="d2">3.85</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D02" id="T0041">
+      <data key="d0">T0041</data>
+      <data key="d1">2.89</data>
+      <data key="d2">6.67</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D02" id="T0042_R">
+      <data key="d0">T0042</data>
+      <data key="d1">2.89</data>
+      <data key="d2">6.67</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D03" id="T0043">
+      <data key="d0">T0043</data>
+      <data key="d1">3.731</data>
+      <data key="d2">8.61</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D03" id="T0044_R">
+      <data key="d0">T0044</data>
+      <data key="d1">3.731</data>
+      <data key="d2">8.61</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D04" id="T0045">
+      <data key="d0">T0045</data>
+      <data key="d1">4.415</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D04" id="T0046_R">
+      <data key="d0">T0046</data>
+      <data key="d1">4.415</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D05" id="T0047">
+      <data key="d0">T0047</data>
+      <data key="d1">5.006</data>
+      <data key="d2">11.55</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D05" id="T0048_R">
+      <data key="d0">T0048</data>
+      <data key="d1">5.006</data>
+      <data key="d2">11.55</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D06" id="T0049">
+      <data key="d0">T0049</data>
+      <data key="d1">5.534</data>
+      <data key="d2">12.77</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D06" id="T0050_R">
+      <data key="d0">T0050</data>
+      <data key="d1">5.534</data>
+      <data key="d2">12.77</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D07" id="T0051">
+      <data key="d0">T0051</data>
+      <data key="d1">6.016</data>
+      <data key="d2">13.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU" target="TRU-D07" id="T0052_R">
+      <data key="d0">T0052</data>
+      <data key="d1">6.016</data>
+      <data key="d2">13.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAI" target="TRU" id="T0018_R">
+      <data key="d0">T0018</data>
+      <data key="d1">59.336</data>
+      <data key="d2">39.56</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAI" target="TRU" id="T0019_R">
+      <data key="d0">T0019</data>
+      <data key="d1">70.017</data>
+      <data key="d2">54.92</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PAI" target="PAC" id="T0020">
+      <data key="d0">T0020</data>
+      <data key="d1">55.189</data>
+      <data key="d2">36.79</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAI" target="PAC" id="T0021">
+      <data key="d0">T0021</data>
+      <data key="d1">65.123</data>
+      <data key="d2">51.08</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PAC" target="PAI" id="T0020_R">
+      <data key="d0">T0020</data>
+      <data key="d1">55.189</data>
+      <data key="d2">36.79</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PAC" target="PAI" id="T0021_R">
+      <data key="d0">T0021</data>
+      <data key="d1">65.123</data>
+      <data key="d2">51.08</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PAC" target="SPL" id="T0022">
+      <data key="d0">T0022</data>
+      <data key="d1">8.995</data>
+      <data key="d2">6.35</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SPL" target="PAC" id="T0022_R">
+      <data key="d0">T0022</data>
+      <data key="d1">8.995</data>
+      <data key="d2">6.35</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SPL" target="GUA" id="T0023">
+      <data key="d0">T0023</data>
+      <data key="d1">24.402</data>
+      <data key="d2">17.23</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="GUA" target="SPL" id="T0023_R">
+      <data key="d0">T0023</data>
+      <data key="d1">24.402</data>
+      <data key="d2">17.23</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="GUA" target="MOC" id="T0024">
+      <data key="d0">T0024</data>
+      <data key="d1">39.614</data>
+      <data key="d2">27.96</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="GUA" target="MOC" id="T0025">
+      <data key="d0">T0025</data>
+      <data key="d1">46.744</data>
+      <data key="d2">38.82</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="MOC" target="GUA" id="T0024_R">
+      <data key="d0">T0024</data>
+      <data key="d1">39.614</data>
+      <data key="d2">27.96</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="MOC" target="GUA" id="T0025_R">
+      <data key="d0">T0025</data>
+      <data key="d1">46.744</data>
+      <data key="d2">38.82</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="MOC" target="REQ" id="T0026">
+      <data key="d0">T0026</data>
+      <data key="d1">30.723</data>
+      <data key="d2">23.04</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="REQ" target="MOC" id="T0026_R">
+      <data key="d0">T0026</data>
+      <data key="d1">30.723</data>
+      <data key="d2">23.04</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="REQ" target="CHI" id="T0027">
+      <data key="d0">T0027</data>
+      <data key="d1">12.568</data>
+      <data key="d2">13.71</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="REQ" id="T0027_R">
+      <data key="d0">T0027</data>
+      <data key="d1">12.568</data>
+      <data key="d2">13.71</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="LAM" id="T0028">
+      <data key="d0">T0028</data>
+      <data key="d1">12.594</data>
+      <data key="d2">9.45</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D01" id="T0053">
+      <data key="d0">T0053</data>
+      <data key="d1">2.294</data>
+      <data key="d2">5.29</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D01" id="T0054_R">
+      <data key="d0">T0054</data>
+      <data key="d1">2.294</data>
+      <data key="d2">5.29</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D02" id="T0055">
+      <data key="d0">T0055</data>
+      <data key="d1">3.973</data>
+      <data key="d2">9.17</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D02" id="T0056_R">
+      <data key="d0">T0056</data>
+      <data key="d1">3.973</data>
+      <data key="d2">9.17</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D03" id="T0057">
+      <data key="d0">T0057</data>
+      <data key="d1">5.129</data>
+      <data key="d2">11.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI" target="CHI-D03" id="T0058_R">
+      <data key="d0">T0058</data>
+      <data key="d1">5.129</data>
+      <data key="d2">11.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="LAM" target="CHI" id="T0028_R">
+      <data key="d0">T0028</data>
+      <data key="d1">12.594</data>
+      <data key="d2">9.45</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="LAM" target="MOT" id="T0029">
+      <data key="d0">T0029</data>
+      <data key="d1">79.027</data>
+      <data key="d2">55.78</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="LAM" target="MOT" id="T0030">
+      <data key="d0">T0030</data>
+      <data key="d1">93.252</data>
+      <data key="d2">77.44</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="MOT" target="LAM" id="T0029_R">
+      <data key="d0">T0029</data>
+      <data key="d1">79.027</data>
+      <data key="d2">55.78</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="MOT" target="LAM" id="T0030_R">
+      <data key="d0">T0030</data>
+      <data key="d1">93.252</data>
+      <data key="d2">77.44</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="MOT" target="OLM" id="T0031">
+      <data key="d0">T0031</data>
+      <data key="d1">23.623</data>
+      <data key="d2">16.68</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="OLM" target="MOT" id="T0031_R">
+      <data key="d0">T0031</data>
+      <data key="d1">23.623</data>
+      <data key="d2">16.68</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="OLM" target="PIU" id="T0032">
+      <data key="d0">T0032</data>
+      <data key="d1">150.986</data>
+      <data key="d2">164.71</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="OLM" target="PIU" id="T0033">
+      <data key="d0">T0033</data>
+      <data key="d1">178.163</data>
+      <data key="d2">228.66</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PIU" target="OLM" id="T0032_R">
+      <data key="d0">T0032</data>
+      <data key="d1">150.986</data>
+      <data key="d2">164.71</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="OLM" id="T0033_R">
+      <data key="d0">T0033</data>
+      <data key="d1">178.163</data>
+      <data key="d2">228.66</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PIU" target="SUL" id="T0034">
+      <data key="d0">T0034</data>
+      <data key="d1">38.086</data>
+      <data key="d2">32.64</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="SUL" id="T0035">
+      <data key="d0">T0035</data>
+      <data key="d1">44.941</data>
+      <data key="d2">45.32</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PIU" target="TAM" id="T0036">
+      <data key="d0">T0036</data>
+      <data key="d1">75.821</data>
+      <data key="d2">64.99</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="TAM" id="T0037">
+      <data key="d0">T0037</data>
+      <data key="d1">89.468</data>
+      <data key="d2">90.22</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="PIU" target="PIU-D01" id="T0059">
+      <data key="d0">T0059</data>
+      <data key="d1">2.549</data>
+      <data key="d2">5.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="PIU-D01" id="T0060_R">
+      <data key="d0">T0060</data>
+      <data key="d1">2.549</data>
+      <data key="d2">5.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="PIU-D02" id="T0061">
+      <data key="d0">T0061</data>
+      <data key="d1">4.414</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="PIU-D02" id="T0062_R">
+      <data key="d0">T0062</data>
+      <data key="d1">4.414</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="PIU-D03" id="T0063">
+      <data key="d0">T0063</data>
+      <data key="d1">5.699</data>
+      <data key="d2">13.15</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU" target="PIU-D03" id="T0064_R">
+      <data key="d0">T0064</data>
+      <data key="d1">5.699</data>
+      <data key="d2">13.15</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL" target="PIU" id="T0034_R">
+      <data key="d0">T0034</data>
+      <data key="d1">38.086</data>
+      <data key="d2">32.64</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL" target="PIU" id="T0035_R">
+      <data key="d0">T0035</data>
+      <data key="d1">44.941</data>
+      <data key="d2">45.32</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="SUL" target="SUL-D01" id="T0065">
+      <data key="d0">T0065</data>
+      <data key="d1">1.873</data>
+      <data key="d2">4.01</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL" target="SUL-D01" id="T0066_R">
+      <data key="d0">T0066</data>
+      <data key="d1">1.873</data>
+      <data key="d2">4.01</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL" target="SUL-D02" id="T0067">
+      <data key="d0">T0067</data>
+      <data key="d1">3.244</data>
+      <data key="d2">6.95</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL" target="SUL-D02" id="T0068_R">
+      <data key="d0">T0068</data>
+      <data key="d1">3.244</data>
+      <data key="d2">6.95</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TAM" target="PIU" id="T0036_R">
+      <data key="d0">T0036</data>
+      <data key="d1">75.821</data>
+      <data key="d2">64.99</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TAM" target="PIU" id="T0037_R">
+      <data key="d0">T0037</data>
+      <data key="d1">89.468</data>
+      <data key="d2">90.22</data>
+      <data key="d3">True</data>
+    </edge>
+    <edge source="TAM" target="CHU" id="T0038">
+      <data key="d0">T0038</data>
+      <data key="d1">21.25</data>
+      <data key="d2">19.62</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU" target="TAM" id="T0038_R">
+      <data key="d0">T0038</data>
+      <data key="d1">21.25</data>
+      <data key="d2">19.62</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU" target="CHU-D01" id="T0069">
+      <data key="d0">T0069</data>
+      <data key="d1">1.561</data>
+      <data key="d2">3.34</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU" target="CHU-D01" id="T0070_R">
+      <data key="d0">T0070</data>
+      <data key="d1">1.561</data>
+      <data key="d2">3.34</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU" target="CHU-D02" id="T0071">
+      <data key="d0">T0071</data>
+      <data key="d1">2.703</data>
+      <data key="d2">5.79</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU" target="CHU-D02" id="T0072_R">
+      <data key="d0">T0072</data>
+      <data key="d1">2.703</data>
+      <data key="d2">5.79</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D01" target="TRU" id="T0039_R">
+      <data key="d0">T0039</data>
+      <data key="d1">1.669</data>
+      <data key="d2">3.85</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D01" target="TRU" id="T0040">
+      <data key="d0">T0040</data>
+      <data key="d1">1.669</data>
+      <data key="d2">3.85</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D02" target="TRU" id="T0041_R">
+      <data key="d0">T0041</data>
+      <data key="d1">2.89</data>
+      <data key="d2">6.67</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D02" target="TRU" id="T0042">
+      <data key="d0">T0042</data>
+      <data key="d1">2.89</data>
+      <data key="d2">6.67</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D03" target="TRU" id="T0043_R">
+      <data key="d0">T0043</data>
+      <data key="d1">3.731</data>
+      <data key="d2">8.61</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D03" target="TRU" id="T0044">
+      <data key="d0">T0044</data>
+      <data key="d1">3.731</data>
+      <data key="d2">8.61</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D04" target="TRU" id="T0045_R">
+      <data key="d0">T0045</data>
+      <data key="d1">4.415</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D04" target="TRU" id="T0046">
+      <data key="d0">T0046</data>
+      <data key="d1">4.415</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D05" target="TRU" id="T0047_R">
+      <data key="d0">T0047</data>
+      <data key="d1">5.006</data>
+      <data key="d2">11.55</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D05" target="TRU" id="T0048">
+      <data key="d0">T0048</data>
+      <data key="d1">5.006</data>
+      <data key="d2">11.55</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D06" target="TRU" id="T0049_R">
+      <data key="d0">T0049</data>
+      <data key="d1">5.534</data>
+      <data key="d2">12.77</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D06" target="TRU" id="T0050">
+      <data key="d0">T0050</data>
+      <data key="d1">5.534</data>
+      <data key="d2">12.77</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D07" target="TRU" id="T0051_R">
+      <data key="d0">T0051</data>
+      <data key="d1">6.016</data>
+      <data key="d2">13.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="TRU-D07" target="TRU" id="T0052">
+      <data key="d0">T0052</data>
+      <data key="d1">6.016</data>
+      <data key="d2">13.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D01" target="CHI" id="T0053_R">
+      <data key="d0">T0053</data>
+      <data key="d1">2.294</data>
+      <data key="d2">5.29</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D01" target="CHI" id="T0054">
+      <data key="d0">T0054</data>
+      <data key="d1">2.294</data>
+      <data key="d2">5.29</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D02" target="CHI" id="T0055_R">
+      <data key="d0">T0055</data>
+      <data key="d1">3.973</data>
+      <data key="d2">9.17</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D02" target="CHI" id="T0056">
+      <data key="d0">T0056</data>
+      <data key="d1">3.973</data>
+      <data key="d2">9.17</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D03" target="CHI" id="T0057_R">
+      <data key="d0">T0057</data>
+      <data key="d1">5.129</data>
+      <data key="d2">11.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHI-D03" target="CHI" id="T0058">
+      <data key="d0">T0058</data>
+      <data key="d1">5.129</data>
+      <data key="d2">11.84</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D01" target="PIU" id="T0059_R">
+      <data key="d0">T0059</data>
+      <data key="d1">2.549</data>
+      <data key="d2">5.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D01" target="PIU" id="T0060">
+      <data key="d0">T0060</data>
+      <data key="d1">2.549</data>
+      <data key="d2">5.88</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D02" target="PIU" id="T0061_R">
+      <data key="d0">T0061</data>
+      <data key="d1">4.414</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D02" target="PIU" id="T0062">
+      <data key="d0">T0062</data>
+      <data key="d1">4.414</data>
+      <data key="d2">10.19</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D03" target="PIU" id="T0063_R">
+      <data key="d0">T0063</data>
+      <data key="d1">5.699</data>
+      <data key="d2">13.15</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="PIU-D03" target="PIU" id="T0064">
+      <data key="d0">T0064</data>
+      <data key="d1">5.699</data>
+      <data key="d2">13.15</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL-D01" target="SUL" id="T0065_R">
+      <data key="d0">T0065</data>
+      <data key="d1">1.873</data>
+      <data key="d2">4.01</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL-D01" target="SUL" id="T0066">
+      <data key="d0">T0066</data>
+      <data key="d1">1.873</data>
+      <data key="d2">4.01</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL-D02" target="SUL" id="T0067_R">
+      <data key="d0">T0067</data>
+      <data key="d1">3.244</data>
+      <data key="d2">6.95</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="SUL-D02" target="SUL" id="T0068">
+      <data key="d0">T0068</data>
+      <data key="d1">3.244</data>
+      <data key="d2">6.95</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU-D01" target="CHU" id="T0069_R">
+      <data key="d0">T0069</data>
+      <data key="d1">1.561</data>
+      <data key="d2">3.34</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU-D01" target="CHU" id="T0070">
+      <data key="d0">T0070</data>
+      <data key="d1">1.561</data>
+      <data key="d2">3.34</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU-D02" target="CHU" id="T0071_R">
+      <data key="d0">T0071</data>
+      <data key="d1">2.703</data>
+      <data key="d2">5.79</data>
+      <data key="d3">False</data>
+    </edge>
+    <edge source="CHU-D02" target="CHU" id="T0072">
+      <data key="d0">T0072</data>
+      <data key="d1">2.703</data>
+      <data key="d2">5.79</data>
+      <data key="d3">False</data>
+    </edge>
+  </graph>
+</graphml>
